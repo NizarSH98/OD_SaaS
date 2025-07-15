@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+
+{% block title %}New Project - Video Labeling Pro{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Page Header -->
+    <div class="page-header" style="text-align: center; padding: var(--space-12) 0 var(--space-8);">
+        <div class="header-icon" style="width: 64px; height: 64px; margin: 0 auto var(--space-4); background: linear-gradient(135deg, var(--primary-500), var(--primary-600)); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; color: white; font-size: var(--text-2xl); box-shadow: var(--shadow-lg);">
+            <i class="fas fa-upload"></i>
+        </div>
+        <h1 style="font-size: 30px; font-weight: 700; color: #000000; margin-bottom: 12px;">
+            Create New Project
+        </h1>
+        <p style="font-size: 18px; color: #4a4a4a; max-width: 600px; margin: 0 auto;">
+            Upload your video and configure frame extraction settings to begin creating your annotation dataset
+        </p>
+    </div>
+
+    <!-- Upload Form -->
+    <div class="upload-container" style="max-width: 800px; margin: 0 auto;">
+        <div class="card">
+            <div class="card-body" style="padding: var(--space-8);">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <!-- Project Configuration -->
+                    <div class="form-section" style="margin-bottom: var(--space-8);">
+                        <h3 style="font-size: var(--text-xl); font-weight: var(--font-semibold); color: var(--neutral-900); margin-bottom: var(--space-4); display: flex; align-items: center; gap: var(--space-2);">
+                            <i class="fas fa-cog text-primary"></i>
+                            Project Configuration
+                        </h3>
+                        
+                        <div class="form-group">
+                            <label for="project_name" class="form-label">
+                                Project Name
+                                <span style="color: var(--neutral-400); font-weight: var(--font-normal);">(optional)</span>
+                            </label>
+                            <input type="text" class="form-control" id="project_name" name="project_name" 
+                                   placeholder="Enter a descriptive name for your project"
+                                   style="font-size: var(--text-base);">
+                            <div class="form-text">
+                                <i class="fas fa-info-circle"></i>
+                                Leave empty to auto-generate a unique project name
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Video Upload Section -->
+                    <div class="form-section" style="margin-bottom: var(--space-8);">
+                        <h3 style="font-size: var(--text-xl); font-weight: var(--font-semibold); color: var(--neutral-900); margin-bottom: var(--space-4); display: flex; align-items: center; gap: var(--space-2);">
+                            <i class="fas fa-video text-primary"></i>
+                            Video Upload
+                        </h3>
+                        
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <h4 class="upload-title">Drag & Drop Your Video</h4>
+                            <p class="upload-subtitle">or click to browse and select file</p>
+                            
+                            <div class="supported-formats" style="margin-top: var(--space-4); padding: var(--space-3); background: var(--neutral-50); border-radius: var(--radius-lg); border: 1px solid var(--neutral-200);">
+                                <div style="display: flex; align-items: center; justify-content: center; gap: var(--space-2); margin-bottom: var(--space-2);">
+                                    <i class="fas fa-check-circle text-success"></i>
+                                    <span style="font-weight: var(--font-medium); color: var(--neutral-700);">Supported Formats</span>
+                                </div>
+                                <div style="font-size: var(--text-sm); color: var(--neutral-600); text-align: center;">
+                                    MP4, AVI, MOV, MKV, FLV, WMV, WebM
+                                </div>
+                            </div>
+                            
+                            <input type="file" id="videoFile" name="video" accept="video/*" style="display: none;">
+                        </div>
+                        
+                        <!-- Selected File Info -->
+                        <div id="fileInfo" class="file-info" style="display: none; margin-top: var(--space-4);">
+                            <div class="file-preview" style="background: var(--success-50); border: 1px solid var(--success-200); border-radius: var(--radius-lg); padding: var(--space-4);">
+                                <div style="display: flex; align-items: center; justify-content: between; gap: var(--space-3);">
+                                    <div style="display: flex; align-items: center; gap: var(--space-3); flex: 1;">
+                                        <div class="file-icon" style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--success-500), var(--success-600)); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: var(--text-xl);">
+                                            <i class="fas fa-file-video"></i>
+                                        </div>
+                                        <div class="file-details">
+                                            <div class="file-name" style="font-weight: var(--font-semibold); color: var(--neutral-900); font-size: var(--text-base);"></div>
+                                            <div class="file-size" style="color: var(--neutral-600); font-size: var(--text-sm);"></div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearFile()" style="border-radius: var(--radius-full);">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Frame Extraction Settings -->
+                    <div class="form-section" style="margin-bottom: var(--space-8);">
+                        <h3 style="font-size: var(--text-xl); font-weight: var(--font-semibold); color: var(--neutral-900); margin-bottom: var(--space-4); display: flex; align-items: center; gap: var(--space-2);">
+                            <i class="fas fa-images text-primary"></i>
+                            Frame Extraction Settings
+                        </h3>
+                        
+                        <div class="extraction-config" style="background: var(--neutral-50); border-radius: var(--radius-lg); padding: var(--space-6); border: 1px solid var(--neutral-200);">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6); margin-bottom: var(--space-4);">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="interval" class="form-label">
+                                        Extraction Interval
+                                    </label>
+                                    <div style="display: flex; gap: var(--space-2);">
+                                        <input type="number" class="form-control" id="interval" name="interval" 
+                                               value="1.0" min="0.1" max="10.0" step="0.1" style="flex: 1;">
+                                        <div style="padding: var(--space-3) var(--space-4); background: var(--neutral-200); border-radius: var(--radius-md); color: var(--neutral-700); font-weight: var(--font-medium); font-size: var(--text-sm);">
+                                            seconds
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="intervalPreset" class="form-label">
+                                        Quick Presets
+                                    </label>
+                                    <select class="form-control" id="intervalPreset" onchange="setInterval()" style="cursor: pointer;">
+                                        <option value="">Select preset...</option>
+                                        <option value="0.5">Every 0.5s (High Density)</option>
+                                        <option value="1.0">Every 1s (Standard)</option>
+                                        <option value="2.0">Every 2s (Medium)</option>
+                                        <option value="5.0">Every 5s (Low Density)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="extraction-info" style="padding: var(--space-4); background: linear-gradient(135deg, var(--primary-50), var(--primary-100)); border-radius: var(--radius-md); border-left: 4px solid var(--primary-500);">
+                                <div style="display: flex; align-items: start; gap: var(--space-3);">
+                                    <i class="fas fa-lightbulb text-primary" style="margin-top: 2px;"></i>
+                                    <div>
+                                        <div style="font-weight: var(--font-medium); color: var(--primary-800); margin-bottom: var(--space-1);">
+                                            Extraction Guidelines
+                                        </div>
+                                        <div style="font-size: var(--text-sm); color: var(--primary-700); line-height: 1.5;">
+                                            Smaller intervals create more frames for detailed annotation but increase processing time.
+                                            For moving objects, use 0.5-1s. For slower scenes, 2-5s intervals work well.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Processing Preview -->
+                    <div class="processing-preview" style="background: linear-gradient(135deg, var(--neutral-50), white); border-radius: var(--radius-lg); padding: var(--space-6); margin-bottom: var(--space-8); border: 1px solid var(--neutral-200);">
+                        <h4 style="font-size: var(--text-lg); font-weight: var(--font-semibold); color: var(--neutral-900); margin-bottom: var(--space-4); display: flex; align-items: center; gap: var(--space-2);">
+                            <i class="fas fa-cogs text-primary"></i>
+                            What Happens Next?
+                        </h4>
+                        
+                        <div class="process-steps" style="display: grid; gap: var(--space-4);">
+                            <div class="process-step" style="display: flex; align-items: center; gap: var(--space-3);">
+                                <div class="step-number" style="width: 32px; height: 32px; background: var(--primary-500); color: white; border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; font-weight: var(--font-semibold); font-size: var(--text-sm);">1</div>
+                                <div>
+                                    <div style="font-weight: var(--font-medium); color: var(--neutral-800);">Video Analysis</div>
+                                    <div style="font-size: var(--text-sm); color: var(--neutral-600);">Extract metadata and validate video format</div>
+                                </div>
+                            </div>
+                            
+                            <div class="process-step" style="display: flex; align-items: center; gap: var(--space-3);">
+                                <div class="step-number" style="width: 32px; height: 32px; background: var(--primary-500); color: white; border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; font-weight: var(--font-semibold); font-size: var(--text-sm);">2</div>
+                                <div>
+                                    <div style="font-weight: var(--font-medium); color: var(--neutral-800);">Frame Extraction</div>
+                                    <div style="font-size: var(--text-sm); color: var(--neutral-600);">Generate frames at your specified interval</div>
+                                </div>
+                            </div>
+                            
+                            <div class="process-step" style="display: flex; align-items: center; gap: var(--space-3);">
+                                <div class="step-number" style="width: 32px; height: 32px; background: var(--primary-500); color: white; border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; font-weight: var(--font-semibold); font-size: var(--text-sm);">3</div>
+                                <div>
+                                    <div style="font-weight: var(--font-medium); color: var(--neutral-800);">Annotation Ready</div>
+                                    <div style="font-size: var(--text-sm); color: var(--neutral-600);">Start creating bounding boxes and labels</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="form-actions" style="display: flex; gap: var(--space-3); justify-content: center;">
+                        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-arrow-left"></i>
+                            Back to Projects
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg" id="uploadBtn" disabled>
+                            <i class="fas fa-rocket"></i>
+                            Start Processing
+                            <div class="spinner" style="display: none; margin-left: var(--space-2);"></div>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing Modal -->
+    <div class="processing-modal" id="processingModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: var(--z-modal); backdrop-filter: blur(8px);">
+        <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: var(--space-4);">
+            <div class="modal-content" style="background: white; border-radius: var(--radius-xl); padding: var(--space-8); max-width: 500px; width: 100%; box-shadow: var(--shadow-xl); text-align: center;">
+                <div class="processing-icon" style="width: 80px; height: 80px; margin: 0 auto var(--space-6); background: linear-gradient(135deg, var(--primary-500), var(--primary-600)); border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; color: white; font-size: var(--text-3xl); animation: pulse 2s infinite;">
+                    <i class="fas fa-cog fa-spin"></i>
+                </div>
+                <h3 style="font-size: var(--text-2xl); font-weight: var(--font-bold); color: var(--neutral-900); margin-bottom: var(--space-3);">
+                    Processing Your Video
+                </h3>
+                <p style="color: var(--neutral-600); margin-bottom: var(--space-6); font-size: var(--text-lg);">
+                    Extracting frames and preparing your annotation workspace...
+                </p>
+                <div class="progress" style="margin-bottom: var(--space-4);">
+                    <div class="progress-bar" id="uploadProgress" style="width: 0%;"></div>
+                </div>
+                <p style="font-size: var(--text-sm); color: var(--neutral-500);" id="progressText">
+                    Initializing...
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Upload functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('videoFile');
+    const fileInfo = document.getElementById('fileInfo');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const uploadForm = document.getElementById('uploadForm');
+    const processingModal = document.getElementById('processingModal');
+
+    // Upload area click handler
+    uploadArea.addEventListener('click', () => fileInput.click());
+
+    // File input change handler
+    fileInput.addEventListener('change', handleFileSelect);
+
+    // Drag and drop handlers
+    uploadArea.addEventListener('dragover', handleDragOver);
+    uploadArea.addEventListener('dragleave', handleDragLeave);
+    uploadArea.addEventListener('drop', handleDrop);
+
+    // Form submit handler
+    uploadForm.addEventListener('submit', handleFormSubmit);
+
+    function handleFileSelect(e) {
+        const file = e.target.files[0];
+        if (file) {
+            displayFileInfo(file);
+        }
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    }
+
+    function handleDragLeave(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            if (file.type.startsWith('video/')) {
+                fileInput.files = files;
+                displayFileInfo(file);
+            } else {
+                alert('Please select a valid video file.');
+            }
+        }
+    }
+
+    function displayFileInfo(file) {
+        const fileName = document.querySelector('.file-name');
+        const fileSize = document.querySelector('.file-size');
+        
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        
+        fileInfo.style.display = 'block';
+        uploadBtn.disabled = false;
+    }
+
+    function clearFile() {
+        fileInput.value = '';
+        fileInfo.style.display = 'none';
+        uploadBtn.disabled = true;
+    }
+
+    function handleFormSubmit(e) {
+        e.preventDefault();
+        
+        if (!fileInput.files[0]) {
+            alert('Please select a video file.');
+            return;
+        }
+
+        const formData = new FormData(uploadForm);
+        
+        // Show processing modal
+        processingModal.style.display = 'block';
+        
+        // Upload with progress tracking
+        const xhr = new XMLHttpRequest();
+        
+        xhr.upload.addEventListener('progress', function(e) {
+            if (e.lengthComputable) {
+                const progress = Math.round((e.loaded / e.total) * 100);
+                document.getElementById('uploadProgress').style.width = progress + '%';
+                document.getElementById('progressText').textContent = `Uploading... ${progress}%`;
+            }
+        });
+        
+        xhr.addEventListener('load', function() {
+            if (xhr.status === 200) {
+                const response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    document.getElementById('progressText').textContent = 'Processing complete! Redirecting...';
+                    setTimeout(() => {
+                        window.location.href = response.redirect_url;
+                    }, 1500);
+                } else {
+                    processingModal.style.display = 'none';
+                    alert('Error: ' + response.message);
+                }
+            } else {
+                processingModal.style.display = 'none';
+                alert('Upload failed. Please try again.');
+            }
+        });
+        
+        xhr.addEventListener('error', function() {
+            processingModal.style.display = 'none';
+            alert('Upload failed. Please check your connection and try again.');
+        });
+        
+        xhr.open('POST', '{{ url_for("main.upload_video") }}');
+        xhr.send(formData);
+    }
+
+    // Make clearFile available globally
+    window.clearFile = clearFile;
+});
+
+// Utility functions
+function setInterval() {
+    const preset = document.getElementById('intervalPreset').value;
+    if (preset) {
+        document.getElementById('interval').value = preset;
+    }
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+</script>
+{% endblock %} 

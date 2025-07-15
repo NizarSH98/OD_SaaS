@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}Projects - Video Labeling Pro{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="fade-in">
+    <div class="hero-section">
+        <div class="hero-icon">
+            <i class="fas fa-play-circle"></i>
+        </div>
+        <h1 class="hero-title">
+            Your Video Annotation Projects
+        </h1>
+        <p class="hero-subtitle">
+            Create professional datasets from videos with advanced labeling tools and export capabilities
+        </p>
+        <a href="{{ url_for('main.upload_video') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-plus"></i>
+            Create New Project
+        </a>
+    </div>
+</div>
+
+{% if projects %}
+    <!-- Projects Grid -->
+    <div class="projects-section">
+        <div style="margin-bottom: 32px;">
+            <h2 style="font-size: 28px; font-weight: 600; color: #000000; margin-bottom: 8px;">
+                Recent Projects
+            </h2>
+            <p style="color: #6b7280;">
+                {{ projects|length }} project{{ 's' if projects|length != 1 else '' }} in your workspace
+            </p>
+        </div>
+        
+        <div class="projects-grid">
+            {% for project in projects %}
+            <div class="project-card card">
+                <div class="card-body">
+                    <!-- Project Header -->
+                    <div class="project-header">
+                        <div class="project-info">
+                            <div class="project-icon">
+                                <i class="fas fa-video"></i>
+                            </div>
+                            <h3 class="project-title">
+                                {{ project.name }}
+                            </h3>
+                            <p class="project-meta">
+                                Created {{ project.created_at }}
+                            </p>
+                        </div>
+                        
+                        <!-- Options Menu -->
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="dropdown" style="border-radius: 50%; width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('main.load_project', project_id=project.id) }}">
+                                        <i class="fas fa-edit"></i>
+                                        Continue Annotation
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('main.export_page', project_id=project.id) }}">
+                                        <i class="fas fa-download"></i>
+                                        Export Dataset
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="#" onclick="deleteProject('{{ project.id }}')">
+                                        <i class="fas fa-trash"></i>
+                                        Delete Project
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Project Stats -->
+                    <div class="project-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">
+                                {{ project.total_frames or 0 }}
+                            </div>
+                            <div class="stat-label">
+                                Frames
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" style="color: #059669;">
+                                {{ project.annotations or 0 }}
+                            </div>
+                            <div class="stat-label">
+                                Labels
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" style="color: #2563eb;">
+                                {{ ((project.annotations or 0) / (project.total_frames or 1) * 100)|round }}%
+                            </div>
+                            <div class="stat-label">
+                                Progress
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div style="margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 14px; font-weight: 500; color: #1a1a1a;">Annotation Progress</span>
+                            <span style="font-size: 14px; color: #6b7280;">
+                                {{ project.annotations or 0 }} / {{ project.total_frames or 0 }}
+                            </span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: {{ ((project.annotations or 0) / (project.total_frames or 1) * 100) if project.total_frames else 0 }}%;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="project-actions">
+                        <a href="{{ url_for('main.load_project', project_id=project.id) }}" class="btn btn-primary" style="flex: 1;">
+                            <i class="fas fa-edit"></i>
+                            Continue
+                        </a>
+                        <a href="{{ url_for('main.export_page', project_id=project.id) }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-download"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+{% else %}
+    <!-- Empty State -->
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-folder-open"></i>
+        </div>
+        <h2 class="empty-title">
+            No Projects Yet
+        </h2>
+        <p class="empty-description">
+            Get started by uploading your first video and creating annotations. Our powerful tools make dataset creation fast and efficient.
+        </p>
+        <a href="{{ url_for('main.upload_video') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-upload"></i>
+            Upload Your First Video
+        </a>
+    </div>
+{% endif %}
+
+<!-- Features Section -->
+<div class="features-section">
+    <div style="text-align: center; margin-bottom: 48px;">
+        <h2 style="font-size: 30px; font-weight: 700; color: #000000; margin-bottom: 16px;">
+            Professional Video Annotation
+        </h2>
+        <p style="font-size: 18px; color: #4a4a4a; max-width: 600px; margin: 0 auto;">
+            Everything you need to create high-quality training datasets from video content
+        </p>
+    </div>
+    
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon" style="background: #2563eb;">
+                <i class="fas fa-magic"></i>
+            </div>
+            <h3 style="font-size: 20px; font-weight: 600; color: #000000; margin-bottom: 8px;">
+                Smart Frame Extraction
+            </h3>
+            <p style="color: #4a4a4a;">
+                Automatically extract frames at customizable intervals with intelligent processing
+            </p>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-icon" style="background: #059669;">
+                <i class="fas fa-vector-square"></i>
+            </div>
+            <h3 style="font-size: 20px; font-weight: 600; color: #000000; margin-bottom: 8px;">
+                Precision Annotation
+            </h3>
+            <p style="color: #4a4a4a;">
+                Draw accurate bounding boxes with pixel-perfect precision and easy editing tools
+            </p>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-icon" style="background: #f59e0b;">
+                <i class="fas fa-download"></i>
+            </div>
+            <h3 style="font-size: 20px; font-weight: 600; color: #000000; margin-bottom: 8px;">
+                Multiple Export Formats
+            </h3>
+            <p style="color: #4a4a4a;">
+                Export to YOLO, COCO, Pascal VOC and other popular machine learning formats
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Project deletion functionality
+function deleteProject(projectId) {
+    if (confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+        fetch(`/delete_project/${projectId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Refresh the page to show updated projects
+                window.location.reload();
+            } else {
+                alert('Error deleting project: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting project');
+        });
+    }
+}
+
+// Add stagger animation to project cards
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.project-card');
+    cards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+    });
+});
+</script>
+{% endblock %} 
