@@ -1,214 +1,304 @@
 {% extends "base.html" %}
 
-{% block title %}Export Dataset - {{ metadata.video_name }}{% endblock %}
+{% block title %}Export Dataset - {{ metadata.video_name }} - VisionLabel Pro{% endblock %}
+
+{% block page_header %}
+<h1 class="page-title">Export Dataset</h1>
+<p class="page-subtitle">Download your annotated dataset in industry-standard formats for machine learning training</p>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{{ url_for('main.annotate', project_id=project_id) }}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left me-2"></i>
+    Back to Annotation
+</a>
+<a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+    <i class="fas fa-home me-2"></i>
+    Dashboard
+</a>
+{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h2 mb-0">
-                <i class="fas fa-download me-2 text-success"></i>
-                Export Dataset
-            </h1>
-            <a href="{{ url_for('main.annotate', project_id=project_id) }}" class="btn btn-outline-primary">
-                <i class="fas fa-arrow-left me-1"></i>
-                Back to Annotation
-            </a>
-        </div>
-
-        <!-- Project Summary -->
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">
-                    <i class="fas fa-info-circle me-2"></i>
-                    Project Summary
-                </h5>
+<!-- Export Interface -->
+<div class="export-interface" 
+     data-project-id="{{ project_id }}"
+     data-metadata="{{ metadata | tojson | e }}"
+     data-total-frames="{{ metadata.total_frames }}"
+     data-annotated-frames="{{ annotated_frames or 0 }}"
+     data-annotations-count="{{ annotations_count or 0 }}"
+     data-completion-percentage="{{ completion_percentage or 0 }}">
+    <!-- Project Information -->
+    <div class="project-summary">
+        <div class="summary-header">
+            <div class="project-icon">
+                <i class="fas fa-video"></i>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <strong>Video Name:</strong><br>
-                            <span class="text-muted">{{ metadata.video_name }}</span>
-                        </div>
-                        <div class="mb-3">
-                            <strong>Total Frames:</strong><br>
-                            <span class="text-muted">{{ metadata.extracted_count }}</span>
-                        </div>
-                        <div class="mb-3">
-                            <strong>Frame Interval:</strong><br>
-                            <span class="text-muted">{{ metadata.interval }}s</span>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <strong>Video Duration:</strong><br>
-                            <span class="text-muted">{{ "%.1f"|format(metadata.duration) }}s</span>
-                        </div>
-                        <div class="mb-3">
-                            <strong>Annotated Frames:</strong><br>
-                            <span class="text-muted">{{ annotated_frames }}</span>
-                        </div>
-                        <div class="mb-3">
-                            <strong>Created:</strong><br>
-                            <span class="text-muted" id="createdDate">{{ metadata.created_at }}</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Progress Bar -->
-                <div class="mt-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span><strong>Annotation Progress:</strong></span>
-                        <span id="progressPercent">0%</span>
-                    </div>
-                    <div class="progress">
-                        <div class="progress-bar" role="progressbar" style="width: 0%" id="progressBar">
-                        </div>
-                    </div>
+            <div class="project-details">
+                <h3 class="project-name">{{ metadata.video_name }}</h3>
+                <div class="project-stats">
+                    <span class="stat-item">
+                        <i class="fas fa-images me-1"></i>
+                        {{ metadata.total_frames }} frames
+                    </span>
+                    <span class="stat-item">
+                        <i class="fas fa-tags me-1"></i>
+                        <span id="totalAnnotations">{{ annotations_count or 0 }}</span> annotations
+                    </span>
+                    <span class="stat-item">
+                        <i class="fas fa-check-circle me-1"></i>
+                        <span id="completionRate">{{ completion_percentage or 0 }}%</span> complete
+                    </span>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Statistics -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-chart-bar me-2"></i>
-                    Dataset Statistics
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row text-center" id="statsContainer">
-                    <div class="col-md-3 col-6 mb-3">
-                        <div class="border rounded p-3">
-                            <i class="fas fa-images text-primary mb-2" style="font-size: 2rem;"></i>
-                            <h4 class="mb-1" id="totalFrames">{{ metadata.extracted_count }}</h4>
-                            <small class="text-muted">Total Frames</small>
-                        </div>
+    <!-- Export Formats -->
+    <div class="export-formats">
+        <h3 class="section-title">
+            <i class="fas fa-download me-2"></i>
+            Choose Export Format
+        </h3>
+        <p class="section-description">
+            Select the format that best fits your machine learning framework and workflow.
+        </p>
+        
+        <div class="formats-grid">
+            <!-- YOLO Format -->
+            <div class="format-card" data-format="yolo">
+                <div class="format-header">
+                    <div class="format-icon yolo">
+                        <i class="fas fa-cube"></i>
                     </div>
-                    <div class="col-md-3 col-6 mb-3">
-                        <div class="border rounded p-3">
-                            <i class="fas fa-tags text-success mb-2" style="font-size: 2rem;"></i>
-                            <h4 class="mb-1" id="totalAnnotations">0</h4>
-                            <small class="text-muted">Total Annotations</small>
-                        </div>
-                    </div>
-                    <div class="col-md-3 col-6 mb-3">
-                        <div class="border rounded p-3">
-                            <i class="fas fa-check-circle text-warning mb-2" style="font-size: 2rem;"></i>
-                            <h4 class="mb-1" id="annotatedFrames">{{ annotated_frames }}</h4>
-                            <small class="text-muted">Annotated Frames</small>
-                        </div>
-                    </div>
-                    <div class="col-md-3 col-6 mb-3">
-                        <div class="border rounded p-3">
-                            <i class="fas fa-layer-group text-info mb-2" style="font-size: 2rem;"></i>
-                            <h4 class="mb-1" id="uniqueClasses">0</h4>
-                            <small class="text-muted">Unique Classes</small>
-                        </div>
+                    <div class="format-info">
+                        <h4 class="format-name">YOLO</h4>
+                        <p class="format-description">Darknet/Ultralytics format</p>
                     </div>
                 </div>
-                
-                <!-- Class Distribution -->
-                <div class="mt-4" id="classDistribution" style="display: none;">
-                    <h6><i class="fas fa-pie-chart me-2"></i>Class Distribution</h6>
-                    <div id="classesList" class="mt-3">
-                        <!-- Classes will be populated here -->
+                <div class="format-details">
+                    <div class="format-features">
+                        <div class="feature-item">
+                            <i class="fas fa-check text-success me-2"></i>
+                            <span>TXT annotation files</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check text-success me-2"></i>
+                            <span>Classes.txt included</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check text-success me-2"></i>
+                            <span>Ready for YOLOv5/v8</span>
+                        </div>
+                    </div>
+                    <div class="format-structure">
+                        <strong>Structure:</strong>
+                        <code>images/ + labels/ + classes.txt</code>
+                    </div>
+                </div>
+                <button class="btn btn-primary format-select-btn" data-format="yolo">
+                    <i class="fas fa-download me-2"></i>
+                    Export YOLO
+                </button>
+            </div>
+
+            <!-- COCO Format -->
+            <div class="format-card" data-format="coco">
+                <div class="format-header">
+                    <div class="format-icon coco">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <div class="format-info">
+                        <h4 class="format-name">COCO</h4>
+                        <p class="format-description">Microsoft COCO format</p>
+                    </div>
+                </div>
+                <div class="format-details">
+                    <div class="format-features">
+                        <div class="feature-item">
+                            <i class="fas fa-check text-success me-2"></i>
+                            <span>JSON annotation file</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check text-success me-2"></i>
+                            <span>Rich metadata support</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check text-success me-2"></i>
+                            <span>Industry standard</span>
+                        </div>
+                    </div>
+                    <div class="format-structure">
+                        <strong>Structure:</strong>
+                        <code>images/ + annotations.json</code>
+                    </div>
+                </div>
+                <button class="btn btn-primary format-select-btn" data-format="coco">
+                    <i class="fas fa-download me-2"></i>
+                    Export COCO
+                </button>
+            </div>
+
+            <!-- Pascal VOC Format -->
+            <div class="format-card" data-format="pascal_voc">
+                <div class="format-header">
+                    <div class="format-icon pascal">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <div class="format-info">
+                        <h4 class="format-name">Pascal VOC</h4>
+                        <p class="format-description">XML-based format</p>
+                    </div>
+                </div>
+                <div class="format-details">
+                    <div class="format-features">
+                        <div class="feature-item">
+                            <i class="fas fa-check text-success me-2"></i>
+                            <span>XML annotation files</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check text-success me-2"></i>
+                            <span>Detailed object info</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check text-success me-2"></i>
+                            <span>Academic standard</span>
+                        </div>
+                    </div>
+                    <div class="format-structure">
+                        <strong>Structure:</strong>
+                        <code>images/ + annotations/</code>
+                    </div>
+                </div>
+                <button class="btn btn-primary format-select-btn" data-format="pascal_voc">
+                    <i class="fas fa-download me-2"></i>
+                    Export Pascal VOC
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Options -->
+    <div class="export-options" id="exportOptions" style="display: none;">
+        <h3 class="section-title">
+            <i class="fas fa-cog me-2"></i>
+            Export Options
+        </h3>
+        
+        <div class="options-grid">
+            <div class="option-group">
+                <h4 class="option-title">Frame Selection</h4>
+                <div class="form-group">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="frameSelection" id="allFrames" value="all" checked>
+                        <label class="form-check-label" for="allFrames">
+                            All frames ({{ metadata.total_frames }})
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="frameSelection" id="annotatedOnly" value="annotated">
+                        <label class="form-check-label" for="annotatedOnly">
+                            Only annotated frames (<span id="annotatedCount">{{ annotated_frames or 0 }}</span>)
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="option-group">
+                <h4 class="option-title">Image Quality</h4>
+                <div class="form-group">
+                    <label for="imageQuality" class="form-label">JPEG Quality</label>
+                    <div class="quality-selector">
+                        <input type="range" class="form-range" id="imageQuality" min="50" max="100" value="95" step="5">
+                        <div class="quality-labels">
+                            <span>50%</span>
+                            <span>75%</span>
+                            <span>100%</span>
+                        </div>
+                        <div class="quality-value">
+                            Quality: <span id="qualityValue">95%</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+        
+        <div class="export-summary">
+            <h4 class="summary-title">Export Summary</h4>
+            <div class="summary-stats">
+                <div class="summary-stat">
+                    <span class="stat-label">Selected Format:</span>
+                    <span class="stat-value" id="selectedFormat">-</span>
+                </div>
+                <div class="summary-stat">
+                    <span class="stat-label">Frames to Export:</span>
+                    <span class="stat-value" id="framesToExport">-</span>
+                </div>
+                <div class="summary-stat">
+                    <span class="stat-label">Estimated Size:</span>
+                    <span class="stat-value" id="estimatedSize">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        <!-- Export Options -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-file-export me-2"></i>
-                    Export Formats
-                </h5>
-            </div>
-            <div class="card-body">
-                <p class="text-muted mb-4">
-                    Choose your preferred format for exporting the labeled dataset. Each format is optimized for different machine learning frameworks.
-                </p>
-                
-                <div class="row">
-                    {% for format in export_formats %}
-                    <div class="col-md-4 mb-3">
-                        <div class="card border-2 export-format-card" data-format="{{ format }}">
-                            <div class="card-body text-center">
-                                {% if format == 'yolo' %}
-                                    <i class="fas fa-eye text-primary mb-3" style="font-size: 2.5rem;"></i>
-                                    <h5>YOLO</h5>
-                                    <p class="text-muted small">
-                                        Perfect for YOLO object detection models. Includes normalized coordinates and class files.
-                                    </p>
-                                    <ul class="list-unstyled text-start small">
-                                        <li><i class="fas fa-check text-success me-1"></i> labels/ folder with .txt files</li>
-                                        <li><i class="fas fa-check text-success me-1"></i> images/ folder with images</li>
-                                        <li><i class="fas fa-check text-success me-1"></i> classes.txt file</li>
-                                    </ul>
-                                {% elif format == 'coco' %}
-                                    <i class="fas fa-database text-warning mb-3" style="font-size: 2.5rem;"></i>
-                                    <h5>COCO</h5>
-                                    <p class="text-muted small">
-                                        Common Objects in Context format. JSON-based format used by many frameworks.
-                                    </p>
-                                    <ul class="list-unstyled text-start small">
-                                        <li><i class="fas fa-check text-success me-1"></i> annotations.json file</li>
-                                        <li><i class="fas fa-check text-success me-1"></i> Complete metadata</li>
-                                        <li><i class="fas fa-check text-success me-1"></i> Category definitions</li>
-                                    </ul>
-                                {% elif format == 'pascal_voc' %}
-                                    <i class="fas fa-file-code text-info mb-3" style="font-size: 2.5rem;"></i>
-                                    <h5>Pascal VOC</h5>
-                                    <p class="text-muted small">
-                                        XML-based format. Compatible with many computer vision tools and frameworks.
-                                    </p>
-                                    <ul class="list-unstyled text-start small">
-                                        <li><i class="fas fa-check text-success me-1"></i> Individual .xml files</li>
-                                        <li><i class="fas fa-check text-success me-1"></i> Detailed annotations</li>
-                                        <li><i class="fas fa-check text-success me-1"></i> Image metadata</li>
-                                    </ul>
-                                {% endif %}
-                                
-                                <button class="btn btn-outline-primary w-100 mt-3" onclick="exportDataset('{{ format }}')">
-                                    <i class="fas fa-download me-1"></i>
-                                    Export {{ format.upper() }}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                
-                <div class="alert alert-info mt-4">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <strong>Note:</strong> Exports will only include frames that have been annotated. 
-                    Make sure to complete your annotations before exporting the final dataset.
-                </div>
-            </div>
+    <!-- Class Distribution -->
+    <div class="class-distribution" id="classDistribution" style="display: none;">
+        <h3 class="section-title">
+            <i class="fas fa-chart-pie me-2"></i>
+            Class Distribution
+        </h3>
+        <div class="distribution-chart">
+            <canvas id="distributionChart" width="400" height="200"></canvas>
+        </div>
+        <div class="class-list" id="classList">
+            <!-- Classes will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Export Actions -->
+    <div class="export-actions" id="exportActions" style="display: none;">
+        <div class="actions-container">
+            <button type="button" class="btn btn-outline-secondary btn-lg" id="cancelExport">
+                <i class="fas fa-times me-2"></i>
+                Cancel
+            </button>
+            <button type="button" class="btn btn-success btn-lg" id="startExport">
+                <i class="fas fa-download me-2"></i>
+                Start Export
+            </button>
         </div>
     </div>
 </div>
 
 <!-- Export Progress Modal -->
-<div class="modal fade" id="exportModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+<div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-body text-center py-4">
-                <div class="mb-3">
-                    <i class="fas fa-file-export fa-spin text-success" style="font-size: 3rem;"></i>
+            <div class="modal-header">
+                <h5 class="modal-title" id="exportModalLabel">
+                    <i class="fas fa-download me-2"></i>
+                    Exporting Dataset
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="export-progress">
+                    <div class="progress-info">
+                        <div class="progress-step" id="progressStep">Preparing export...</div>
+                        <div class="progress-details" id="progressDetails">Initializing...</div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 id="exportProgressBar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-percentage" id="progressPercentage">0%</div>
+                    </div>
                 </div>
-                <h5>Exporting Dataset...</h5>
-                <p class="text-muted mb-3" id="exportStatus">Preparing export in <span id="exportFormat"></span> format</p>
-                <div class="progress">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
-                         role="progressbar" style="width: 100%"></div>
-                </div>
-                <p class="text-muted mt-3 mb-0">This may take a few moments.</p>
+            </div>
+            <div class="modal-footer" id="exportFooter">
+                <button type="button" class="btn btn-outline-secondary" id="cancelExportModal" disabled>
+                    Cancel Export
+                </button>
             </div>
         </div>
     </div>
@@ -216,110 +306,377 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/export-interface.js') }}"></script>
 <script>
-$(document).ready(function() {
-    loadProjectStats();
-    formatCreatedDate();
-    
-    // Add hover effects to export cards
-    $('.export-format-card').hover(
-        function() { $(this).addClass('border-primary shadow-sm'); },
-        function() { $(this).removeClass('border-primary shadow-sm'); }
-    );
-});
-
-function loadProjectStats() {
-    $.get('/api/project/{{ project_id }}/stats')
-        .done(function(data) {
-            // Update statistics
-            $('#totalAnnotations').text(data.total_annotations);
-            $('#uniqueClasses').text(data.unique_classes);
-            
-            // Update progress
-            var progressPercent = Math.round(data.completion_percentage);
-            $('#progressPercent').text(progressPercent + '%');
-            $('#progressBar').css('width', progressPercent + '%');
-            
-            // Update progress bar color
-            var progressBar = $('#progressBar');
-            progressBar.removeClass('bg-danger bg-warning bg-success');
-            if (progressPercent < 25) {
-                progressBar.addClass('bg-danger');
-            } else if (progressPercent < 75) {
-                progressBar.addClass('bg-warning');
-            } else {
-                progressBar.addClass('bg-success');
-            }
-            
-            // Show class distribution if we have classes
-            if (data.classes && data.classes.length > 0) {
-                $('#classDistribution').show();
-                var classesList = $('#classesList');
-                classesList.empty();
-                
-                data.classes.forEach(function(className) {
-                    var badge = $('<span class="badge bg-secondary me-2 mb-2">' + className + '</span>');
-                    classesList.append(badge);
-                });
-            }
-        })
-        .fail(function() {
-            showToast('Failed to load project statistics', 'warning');
-        });
-}
-
-function formatCreatedDate() {
-    var dateStr = '{{ metadata.created_at }}';
-    if (dateStr) {
-        var date = new Date(dateStr);
-        var formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-        $('#createdDate').text(formattedDate);
-    }
-}
-
-function exportDataset(format) {
-    // Show export modal
-    $('#exportFormat').text(format.toUpperCase());
-    $('#exportModal').modal('show');
-    
-    // Create a temporary link to trigger download
-    var link = document.createElement('a');
-    link.href = '/api/export/{{ project_id }}/' + format;
-    link.download = '{{ project_id }}_' + format + '_dataset.zip';
-    
-    // Handle download completion
-    link.onload = function() {
-        setTimeout(function() {
-            $('#exportModal').modal('hide');
-            showToast('Dataset exported successfully!', 'success');
-        }, 2000);
-    };
-    
-    // Handle download error
-    link.onerror = function() {
-        $('#exportModal').modal('hide');
-        showToast('Export failed. Please try again.', 'danger');
-    };
-    
-    // Trigger download
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    // Hide modal after a delay (fallback)
-    setTimeout(function() {
-        $('#exportModal').modal('hide');
-        showToast('Download started! Check your downloads folder.', 'info');
-    }, 3000);
-}
-
-// Add some visual feedback for export cards
-$(document).on('click', '.export-format-card', function() {
-    var format = $(this).data('format');
-    $(this).addClass('border-success');
-    setTimeout(function() {
-        $('.export-format-card').removeClass('border-success');
-    }, 1000);
+// Initialize export interface
+document.addEventListener('DOMContentLoaded', function() {
+    const exportEl = document.querySelector('.export-interface');
+    const exportInterface = new ExportInterface({
+        projectId: exportEl.dataset.projectId,
+        metadata: JSON.parse(exportEl.dataset.metadata),
+        stats: {
+            totalFrames: parseInt(exportEl.dataset.totalFrames),
+            annotatedFrames: parseInt(exportEl.dataset.annotatedFrames),
+            totalAnnotations: parseInt(exportEl.dataset.annotationsCount),
+            completionRate: parseInt(exportEl.dataset.completionPercentage)
+        }
+    });
 });
 </script>
+
+<style>
+/* Export Interface Styles */
+.export-interface {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    gap: var(--space-8);
+}
+
+.project-summary {
+    background: linear-gradient(135deg, var(--blue-50), var(--blue-100));
+    border: 1px solid var(--blue-200);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+}
+
+.summary-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.project-icon {
+    width: 64px;
+    height: 64px;
+    background: var(--blue-500);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: var(--font-2xl);
+}
+
+.project-name {
+    font-size: var(--font-2xl);
+    font-weight: var(--font-bold);
+    color: var(--blue-900);
+    margin-bottom: var(--space-2);
+}
+
+.project-stats {
+    display: flex;
+    gap: var(--space-6);
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    color: var(--blue-700);
+    font-weight: var(--font-medium);
+    font-size: var(--font-sm);
+}
+
+.section-title {
+    font-size: var(--font-xl);
+    font-weight: var(--font-semibold);
+    color: var(--gray-900);
+    margin-bottom: var(--space-4);
+    display: flex;
+    align-items: center;
+}
+
+.section-description {
+    color: var(--gray-600);
+    margin-bottom: var(--space-6);
+}
+
+.formats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: var(--space-6);
+}
+
+.format-card {
+    background: #ffffff;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.format-card:hover {
+    border-color: var(--blue-300);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.format-card.selected {
+    border-color: var(--blue-500);
+    background: var(--blue-50);
+}
+
+.format-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.format-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: var(--font-lg);
+}
+
+.format-icon.yolo {
+    background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+}
+
+.format-icon.coco {
+    background: linear-gradient(135deg, #4ecdc4, #6ee8df);
+}
+
+.format-icon.pascal {
+    background: linear-gradient(135deg, #45b7d1, #6cc8e0);
+}
+
+.format-name {
+    font-size: var(--font-lg);
+    font-weight: var(--font-semibold);
+    color: var(--gray-900);
+    margin-bottom: var(--space-1);
+}
+
+.format-description {
+    color: var(--gray-600);
+    font-size: var(--font-sm);
+    margin: 0;
+}
+
+.format-details {
+    margin-bottom: var(--space-6);
+}
+
+.format-features {
+    margin-bottom: var(--space-4);
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--space-2);
+    font-size: var(--font-sm);
+    color: var(--gray-700);
+}
+
+.format-structure {
+    background: var(--gray-50);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+    font-size: var(--font-sm);
+    color: var(--gray-600);
+}
+
+.format-structure code {
+    background: var(--gray-200);
+    color: var(--gray-800);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-family: 'Courier New', monospace;
+    margin-left: var(--space-2);
+}
+
+.format-select-btn {
+    width: 100%;
+    margin-top: auto;
+}
+
+.export-options,
+.class-distribution,
+.export-actions {
+    background: #ffffff;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-sm);
+}
+
+.options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-6);
+    margin-bottom: var(--space-6);
+}
+
+.option-group {
+    background: var(--gray-50);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+}
+
+.option-title {
+    font-size: var(--font-base);
+    font-weight: var(--font-semibold);
+    color: var(--gray-900);
+    margin-bottom: var(--space-3);
+}
+
+.quality-selector {
+    text-align: center;
+}
+
+.quality-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-xs);
+    color: var(--gray-500);
+    margin-top: var(--space-2);
+}
+
+.quality-value {
+    font-weight: var(--font-medium);
+    color: var(--gray-700);
+    margin-top: var(--space-2);
+}
+
+.export-summary {
+    background: var(--green-50);
+    border: 1px solid var(--green-200);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+}
+
+.summary-title {
+    font-size: var(--font-base);
+    font-weight: var(--font-semibold);
+    color: var(--green-800);
+    margin-bottom: var(--space-3);
+}
+
+.summary-stats {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.summary-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stat-label {
+    color: var(--green-700);
+    font-weight: var(--font-medium);
+}
+
+.stat-value {
+    color: var(--green-800);
+    font-weight: var(--font-semibold);
+}
+
+.distribution-chart {
+    text-align: center;
+    margin-bottom: var(--space-6);
+}
+
+.class-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-3);
+}
+
+.class-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    background: var(--gray-50);
+    border-radius: var(--radius-md);
+}
+
+.class-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+}
+
+.class-name {
+    font-weight: var(--font-medium);
+    color: var(--gray-800);
+}
+
+.class-count {
+    color: var(--gray-600);
+    font-size: var(--font-sm);
+    margin-left: auto;
+}
+
+.actions-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.export-progress {
+    text-align: center;
+}
+
+.progress-info {
+    margin-bottom: var(--space-4);
+}
+
+.progress-step {
+    font-size: var(--font-lg);
+    font-weight: var(--font-semibold);
+    color: var(--gray-900);
+    margin-bottom: var(--space-2);
+}
+
+.progress-details {
+    color: var(--gray-600);
+}
+
+.progress-container {
+    position: relative;
+    margin-bottom: var(--space-4);
+}
+
+.progress-percentage {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: var(--font-semibold);
+    color: var(--gray-700);
+    font-size: var(--font-sm);
+}
+
+@media (max-width: 768px) {
+    .formats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .options-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .project-stats {
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+    
+    .actions-container {
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+}
+</style>
 {% endblock %} 

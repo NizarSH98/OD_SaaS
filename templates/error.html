@@ -1,29 +1,673 @@
 {% extends "base.html" %}
 
-{% block title %}Error - Video Labeling Tool{% endblock %}
+{% block title %}Error - VisionLabel Pro{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-6 col-md-8">
-        <div class="text-center py-5">
-            <div class="mb-4">
-                <i class="fas fa-exclamation-triangle text-warning" style="font-size: 4rem;"></i>
+<div class="container">
+    <div class="error-page fade-in">
+        <!-- Error Illustration -->
+        <div class="error-illustration">
+            <div class="error-icon">
+                <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
             </div>
-            <h2 class="text-muted mb-3">Oops! Something went wrong</h2>
-            <p class="text-muted mb-4">
-                {{ error or "An unexpected error occurred. Please try again." }}
-            </p>
-            <div class="d-grid gap-2 d-md-block">
-                <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-lg">
-                    <i class="fas fa-home me-2"></i>
-                    Go Home
-                </a>
-                <button onclick="history.back()" class="btn btn-outline-secondary btn-lg">
-                    <i class="fas fa-arrow-left me-2"></i>
-                    Go Back
+            <div class="error-particles">
+                <div class="particle particle-1"></div>
+                <div class="particle particle-2"></div>
+                <div class="particle particle-3"></div>
+                <div class="particle particle-4"></div>
+            </div>
+        </div>
+        
+        <!-- Error Content -->
+        <div class="error-content">
+            <h1 class="error-title">Oops! Something went wrong</h1>
+            
+            <div class="error-message">
+                <p class="error-description">
+                    {{ error or "We encountered an unexpected issue. Our team has been notified and is working to resolve it." }}
+                </p>
+            </div>
+            
+            <!-- Error Code (if available) -->
+            {% if error_code %}
+            <div class="error-code">
+                <span class="code-label">Error Code:</span>
+                <code class="code-value">{{ error_code }}</code>
+            </div>
+            {% endif %}
+            
+            <!-- Recovery Actions -->
+            <div class="error-actions">
+                <div class="primary-actions">
+                    <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-home me-2" aria-hidden="true"></i>
+                        Go to Dashboard
+                    </a>
+                    
+                    <button onclick="history.back()" class="btn btn-outline-secondary btn-lg">
+                        <i class="fas fa-arrow-left me-2" aria-hidden="true"></i>
+                        Go Back
+                    </button>
+                </div>
+                
+                <div class="secondary-actions">
+                    <button onclick="location.reload()" class="btn btn-outline-primary">
+                        <i class="fas fa-redo me-2" aria-hidden="true"></i>
+                        Try Again
+                    </button>
+                    
+                    <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#reportModal">
+                        <i class="fas fa-bug me-2" aria-hidden="true"></i>
+                        Report Issue
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Help Section -->
+        <div class="error-help">
+            <div class="help-header">
+                <h3 class="help-title">
+                    <i class="fas fa-question-circle me-2" aria-hidden="true"></i>
+                    Common Solutions
+                </h3>
+            </div>
+            
+            <div class="help-grid">
+                <div class="help-card">
+                    <div class="help-icon">
+                        <i class="fas fa-wifi" aria-hidden="true"></i>
+                    </div>
+                    <h4 class="help-card-title">Check Connection</h4>
+                    <p class="help-card-description">
+                        Ensure you have a stable internet connection and try refreshing the page.
+                    </p>
+                </div>
+                
+                <div class="help-card">
+                    <div class="help-icon">
+                        <i class="fas fa-browser" aria-hidden="true"></i>
+                    </div>
+                    <h4 class="help-card-title">Clear Browser Cache</h4>
+                    <p class="help-card-description">
+                        Clear your browser cache and cookies, then try accessing the page again.
+                    </p>
+                </div>
+                
+                <div class="help-card">
+                    <div class="help-icon">
+                        <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                    </div>
+                    <h4 class="help-card-title">Disable Extensions</h4>
+                    <p class="help-card-description">
+                        Temporarily disable browser extensions that might interfere with the application.
+                    </p>
+                </div>
+                
+                <div class="help-card">
+                    <div class="help-icon">
+                        <i class="fas fa-clock" aria-hidden="true"></i>
+                    </div>
+                    <h4 class="help-card-title">Try Later</h4>
+                    <p class="help-card-description">
+                        The issue might be temporary. Please try again in a few minutes.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contact Support -->
+        <div class="error-support">
+            <div class="support-content">
+                <h3 class="support-title">Still need help?</h3>
+                <p class="support-description">
+                    Our support team is here to help you get back on track.
+                </p>
+                <div class="support-actions">
+                    <a href="#contact" class="btn btn-success">
+                        <i class="fas fa-headset me-2" aria-hidden="true"></i>
+                        Contact Support
+                    </a>
+                    <a href="#documentation" class="btn btn-outline-primary">
+                        <i class="fas fa-book me-2" aria-hidden="true"></i>
+                        View Documentation
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Issue Modal -->
+<div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reportModalLabel">
+                    <i class="fas fa-bug me-2" aria-hidden="true"></i>
+                    Report an Issue
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="reportForm">
+                    <div class="form-group mb-3">
+                        <label for="issueType" class="form-label">Issue Type</label>
+                        <select class="form-control" id="issueType" required>
+                            <option value="">Select issue type...</option>
+                            <option value="error">Application Error</option>
+                            <option value="performance">Performance Issue</option>
+                            <option value="ui">User Interface Problem</option>
+                            <option value="feature">Feature Request</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label for="issueDescription" class="form-label">Description</label>
+                        <textarea class="form-control" 
+                                  id="issueDescription" 
+                                  rows="4" 
+                                  placeholder="Please describe what happened and what you were trying to do..."
+                                  required></textarea>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label for="userEmail" class="form-label">Email (Optional)</label>
+                        <input type="email" 
+                               class="form-control" 
+                               id="userEmail" 
+                               placeholder="your.email@example.com">
+                        <div class="form-text">
+                            Provide your email if you'd like us to follow up with you
+                        </div>
+                    </div>
+                    
+                    <!-- Browser Info -->
+                    <div class="browser-info">
+                        <h6 class="mb-2">Technical Information</h6>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">Browser:</span>
+                                <span class="info-value" id="browserInfo">Chrome 91.0</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Screen:</span>
+                                <span class="info-value" id="screenInfo">1920x1080</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Time:</span>
+                                <span class="info-value" id="timeInfo">2024-01-15 14:30</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">URL:</span>
+                                <span class="info-value" id="urlInfo">{{ request.url }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitReport()">
+                    <i class="fas fa-paper-plane me-2" aria-hidden="true"></i>
+                    Submit Report
                 </button>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.error-page {
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--space-8) 0;
+}
+
+.error-illustration {
+    position: relative;
+    margin-bottom: var(--space-8);
+}
+
+.error-icon {
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(135deg, var(--warning-500), var(--warning-600));
+    border-radius: var(--radius-2xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: var(--text-5xl);
+    box-shadow: var(--shadow-xl);
+    position: relative;
+    z-index: 2;
+}
+
+.error-particles {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    pointer-events: none;
+}
+
+.particle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: var(--warning-400);
+    border-radius: 50%;
+    opacity: 0.6;
+    animation: float 3s ease-in-out infinite;
+}
+
+.particle-1 { top: 20%; left: 20%; animation-delay: 0s; }
+.particle-2 { top: 20%; right: 20%; animation-delay: 0.5s; }
+.particle-3 { bottom: 20%; left: 20%; animation-delay: 1s; }
+.particle-4 { bottom: 20%; right: 20%; animation-delay: 1.5s; }
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.error-content {
+    max-width: 600px;
+    margin-bottom: var(--space-8);
+}
+
+.error-title {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--neutral-900);
+    margin-bottom: var(--space-4);
+}
+
+.error-description {
+    font-size: var(--text-lg);
+    color: var(--neutral-600);
+    line-height: 1.6;
+    margin-bottom: var(--space-6);
+}
+
+.error-code {
+    background: var(--neutral-100);
+    border: 1px solid var(--neutral-300);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-6);
+    display: inline-block;
+}
+
+.code-label {
+    font-size: var(--text-sm);
+    color: var(--neutral-600);
+    margin-right: var(--space-2);
+}
+
+.code-value {
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: var(--text-sm);
+    color: var(--neutral-800);
+    background: var(--neutral-200);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+}
+
+.error-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    align-items: center;
+}
+
+.primary-actions {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.secondary-actions {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.error-help {
+    width: 100%;
+    max-width: 800px;
+    margin-bottom: var(--space-8);
+}
+
+.help-header {
+    margin-bottom: var(--space-6);
+}
+
+.help-title {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--neutral-800);
+    margin: 0;
+}
+
+.help-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--space-4);
+}
+
+.help-card {
+    background: white;
+    border: 1px solid var(--neutral-200);
+    border-radius: var(--radius-xl);
+    padding: var(--space-5);
+    text-align: center;
+    transition: all var(--transition-normal);
+}
+
+.help-card:hover {
+    border-color: var(--primary-300);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.help-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--primary-100);
+    color: var(--primary-600);
+    border-radius: var(--radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--space-3);
+    font-size: var(--text-xl);
+}
+
+.help-card-title {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--neutral-800);
+    margin-bottom: var(--space-2);
+}
+
+.help-card-description {
+    font-size: var(--text-sm);
+    color: var(--neutral-600);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.error-support {
+    background: linear-gradient(135deg, var(--primary-50), var(--primary-100));
+    border-radius: var(--radius-2xl);
+    padding: var(--space-8);
+    width: 100%;
+    max-width: 600px;
+}
+
+.support-title {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--neutral-900);
+    margin-bottom: var(--space-2);
+}
+
+.support-description {
+    font-size: var(--text-base);
+    color: var(--neutral-600);
+    margin-bottom: var(--space-4);
+}
+
+.support-actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Modal Styles */
+.browser-info {
+    background: var(--neutral-50);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    margin-top: var(--space-4);
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-1) 0;
+}
+
+.info-label {
+    font-size: var(--text-sm);
+    color: var(--neutral-600);
+    font-weight: var(--font-medium);
+}
+
+.info-value {
+    font-size: var(--text-sm);
+    color: var(--neutral-800);
+    font-family: 'Monaco', 'Menlo', monospace;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .error-title {
+        font-size: var(--text-3xl);
+    }
+    
+    .error-description {
+        font-size: var(--text-base);
+    }
+    
+    .help-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .primary-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .secondary-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .support-actions {
+        flex-direction: column;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Enhanced error page functionality
+class ErrorPageManager {
+    constructor() {
+        this.init();
+    }
+    
+    init() {
+        this.populateBrowserInfo();
+        this.setupReportForm();
+    }
+    
+    populateBrowserInfo() {
+        // Populate browser information
+        document.getElementById('browserInfo').textContent = this.getBrowserInfo();
+        document.getElementById('screenInfo').textContent = `${screen.width}x${screen.height}`;
+        document.getElementById('timeInfo').textContent = new Date().toLocaleString();
+        document.getElementById('urlInfo').textContent = window.location.href;
+    }
+    
+    getBrowserInfo() {
+        const userAgent = navigator.userAgent;
+        let browser = 'Unknown';
+        let version = 'Unknown';
+        
+        if (userAgent.includes('Chrome/')) {
+            browser = 'Chrome';
+            version = userAgent.match(/Chrome\/([0-9]+)/)[1];
+        } else if (userAgent.includes('Firefox/')) {
+            browser = 'Firefox';
+            version = userAgent.match(/Firefox\/([0-9]+)/)[1];
+        } else if (userAgent.includes('Safari/')) {
+            browser = 'Safari';
+            version = userAgent.match(/Version\/([0-9.]+)/)?.[1] || 'Unknown';
+        } else if (userAgent.includes('Edge/')) {
+            browser = 'Edge';
+            version = userAgent.match(/Edge\/([0-9]+)/)[1];
+        }
+        
+        return `${browser} ${version}`;
+    }
+    
+    setupReportForm() {
+        const form = document.getElementById('reportForm');
+        if (form) {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.submitReport();
+            });
+        }
+    }
+    
+    submitReport() {
+        const issueType = document.getElementById('issueType').value;
+        const description = document.getElementById('issueDescription').value;
+        const email = document.getElementById('userEmail').value;
+        
+        if (!issueType || !description) {
+            this.showNotification('Please fill in all required fields', 'warning');
+            return;
+        }
+        
+        // Prepare report data
+        const reportData = {
+            type: issueType,
+            description: description,
+            email: email,
+            url: window.location.href,
+            userAgent: navigator.userAgent,
+            timestamp: new Date().toISOString(),
+            screenResolution: `${screen.width}x${screen.height}`,
+            viewport: `${window.innerWidth}x${window.innerHeight}`
+        };
+        
+        // In a real application, this would send to your error reporting service
+        console.log('Error report:', reportData);
+        
+        // Simulate submission
+        this.submitReportToService(reportData);
+    }
+    
+    async submitReportToService(reportData) {
+        try {
+            // Show loading state
+            const submitBtn = document.querySelector('#reportModal .btn-primary');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting...';
+            submitBtn.disabled = true;
+            
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // In a real app, you would make an actual API call:
+            // const response = await fetch('/api/report-error', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify(reportData)
+            // });
+            
+            // Hide modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('reportModal'));
+            modal.hide();
+            
+            // Show success message
+            this.showNotification('Thank you for your report. We\'ll investigate the issue.', 'success');
+            
+            // Reset form
+            document.getElementById('reportForm').reset();
+            
+            // Reset button
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            
+        } catch (error) {
+            console.error('Failed to submit report:', error);
+            this.showNotification('Failed to submit report. Please try again.', 'error');
+        }
+    }
+    
+    showNotification(message, type = 'info') {
+        if (window.VisionLabel) {
+            window.VisionLabel.showNotification(message, type);
+        } else {
+            // Fallback notification
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} position-fixed top-0 end-0 m-3`;
+            notification.style.zIndex = '9999';
+            notification.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-${this.getIconForType(type)} me-2"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+    }
+    
+    getIconForType(type) {
+        const icons = {
+            'success': 'check-circle',
+            'error': 'exclamation-triangle',
+            'warning': 'exclamation-circle',
+            'info': 'info-circle'
+        };
+        return icons[type] || 'info-circle';
+    }
+}
+
+// Global function for submitting reports
+function submitReport() {
+    if (window.errorManager) {
+        window.errorManager.submitReport();
+    }
+}
+
+// Initialize error page manager when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    window.errorManager = new ErrorPageManager();
+});
+</script>
 {% endblock %} 

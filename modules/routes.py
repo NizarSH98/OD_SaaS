@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify, send_file, session, redirect, url_for, current_app
+from flask_login import login_required, current_user
 import os
 import uuid
 from werkzeug.utils import secure_filename
@@ -23,12 +24,14 @@ def initialize_processors():
         label_storage = LabelStorage(current_app.config['DATASETS_FOLDER'])
 
 @main_bp.route('/')
+@login_required
 def index():
     """Main page - project selection or create new"""
     projects = video_processor.list_projects()
     return render_template('index.html', projects=projects)
 
 @main_bp.route('/upload', methods=['GET', 'POST'])
+@login_required
 def upload_video():
     """Upload video and extract frames"""
     if request.method == 'GET':
@@ -91,6 +94,7 @@ def load_project(project_id):
         return render_template('error.html', error='Project not found'), 404
 
 @main_bp.route('/annotate/<project_id>')
+@login_required
 def annotate(project_id):
     """Main annotation interface"""
     try:
@@ -189,6 +193,7 @@ def navigate_frame(project_id):
         return jsonify({'error': str(e)}), 500
 
 @main_bp.route('/export/<project_id>')
+@login_required
 def export_page(project_id):
     """Export page for dataset"""
     try:
@@ -208,6 +213,7 @@ def export_page(project_id):
         return render_template('error.html', error='Project not found'), 404
 
 @main_bp.route('/api/export/<project_id>/<format_type>')
+@login_required
 def export_dataset(project_id, format_type):
     """Export dataset in specified format"""
     try:
@@ -270,9 +276,9 @@ def project_stats(project_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@main_bp.route('/delete_project/<project_id>', methods=['DELETE'])
-def delete_project(project_id):
-    """Delete a project and all its data"""
+@main_bp.route('/api/project/<project_id>', methods=['DELETE'])
+def delete_project_api(project_id):
+    """Delete a project and all its data (REST API endpoint)"""
     try:
         # Delete from video processor (frames and project data)
         if hasattr(video_processor, 'delete_project'):
@@ -286,6 +292,11 @@ def delete_project(project_id):
         
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+@main_bp.route('/delete_project/<project_id>', methods=['DELETE'])
+def delete_project(project_id):
+    """Delete a project and all its data (legacy endpoint)"""
+    return delete_project_api(project_id)
 
 # Error handlers
 @main_bp.errorhandler(404)

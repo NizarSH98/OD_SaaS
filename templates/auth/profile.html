@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - VisionLabel Pro{% endblock %}
+
+{% block page_header %}
+<h1 class="page-title">Your Profile</h1>
+<p class="page-subtitle">Manage your account settings and information</p>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left me-2"></i>
+    Back to Dashboard
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-card">
+        <div class="profile-header">
+            <div class="profile-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="profile-info">
+                <h2 class="profile-name">{{ user.email.split('@')[0].title() }}</h2>
+                <p class="profile-email">{{ user.email }}</p>
+                <div class="profile-badges">
+                    <span class="badge badge-success">Active Account</span>
+                    <span class="badge badge-secondary">Free Plan</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="profile-stats">
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-plus"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-label">Member Since</div>
+                    <div class="stat-value">{{ user.created_at[:10] }}</div>
+                </div>
+            </div>
+            
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-label">Last Login</div>
+                    <div class="stat-value">
+                        {% if user.last_login %}
+                            {{ user.last_login[:10] }}
+                        {% else %}
+                            Never
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="profile-actions">
+            <h3 class="actions-title">Account Actions</h3>
+            <div class="actions-grid">
+                <a href="{{ url_for('main.index') }}" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-th-large"></i>
+                    </div>
+                    <div class="action-content">
+                        <h4 class="action-title">Dashboard</h4>
+                        <p class="action-description">View your projects and analytics</p>
+                    </div>
+                </a>
+                
+                <a href="{{ url_for('main.upload_video') }}" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                    <div class="action-content">
+                        <h4 class="action-title">New Project</h4>
+                        <p class="action-description">Upload and annotate videos</p>
+                    </div>
+                </a>
+                
+                <button class="action-card" onclick="alert('Settings coming soon!')">
+                    <div class="action-icon">
+                        <i class="fas fa-cog"></i>
+                    </div>
+                    <div class="action-content">
+                        <h4 class="action-title">Settings</h4>
+                        <p class="action-description">Manage account preferences</p>
+                    </div>
+                </button>
+                
+                <a href="{{ url_for('auth.logout') }}" class="action-card logout-card">
+                    <div class="action-icon">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </div>
+                    <div class="action-content">
+                        <h4 class="action-title">Sign Out</h4>
+                        <p class="action-description">Log out of your account</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Profile Styles */
+.profile-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.profile-card {
+    background: #ffffff;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+    padding: var(--space-8);
+    background: linear-gradient(135deg, var(--blue-50), var(--blue-100));
+    border-bottom: 1px solid var(--blue-200);
+}
+
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, var(--blue-500), var(--blue-600));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: var(--font-4xl);
+    box-shadow: var(--shadow-md);
+    flex-shrink: 0;
+}
+
+.profile-name {
+    font-size: var(--font-3xl);
+    font-weight: var(--font-bold);
+    color: var(--blue-900);
+    margin-bottom: var(--space-2);
+}
+
+.profile-email {
+    font-size: var(--font-lg);
+    color: var(--blue-700);
+    margin-bottom: var(--space-3);
+}
+
+.profile-badges {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.badge {
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-lg);
+    font-size: var(--font-xs);
+    font-weight: var(--font-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.badge-success {
+    background: var(--green-100);
+    color: var(--green-800);
+}
+
+.badge-secondary {
+    background: var(--gray-100);
+    color: var(--gray-700);
+}
+
+.profile-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--space-4);
+    padding: var(--space-6);
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    background: #ffffff;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-200);
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--blue-100);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--blue-600);
+    font-size: var(--font-lg);
+}
+
+.stat-label {
+    font-size: var(--font-sm);
+    color: var(--gray-600);
+    margin-bottom: var(--space-1);
+}
+
+.stat-value {
+    font-size: var(--font-base);
+    font-weight: var(--font-semibold);
+    color: var(--gray-900);
+}
+
+.profile-actions {
+    padding: var(--space-6);
+}
+
+.actions-title {
+    font-size: var(--font-xl);
+    font-weight: var(--font-semibold);
+    color: var(--gray-900);
+    margin-bottom: var(--space-6);
+}
+
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-4);
+}
+
+.action-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-6);
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.action-card:hover {
+    background: #ffffff;
+    border-color: var(--blue-300);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    color: inherit;
+}
+
+.logout-card:hover {
+    border-color: var(--red-300);
+    background: var(--red-50);
+}
+
+.action-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--blue-100);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--blue-600);
+    font-size: var(--font-lg);
+}
+
+.logout-card .action-icon {
+    background: var(--red-100);
+    color: var(--red-600);
+}
+
+.action-title {
+    font-size: var(--font-base);
+    font-weight: var(--font-semibold);
+    color: var(--gray-900);
+    margin-bottom: var(--space-1);
+    text-align: center;
+}
+
+.action-description {
+    font-size: var(--font-sm);
+    color: var(--gray-600);
+    text-align: center;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-4);
+    }
+    
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+        font-size: var(--font-2xl);
+    }
+    
+    .profile-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .actions-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+}
+</style>
+{% endblock %} 

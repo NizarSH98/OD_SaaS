@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - VisionLabel Pro{% endblock %}
+
+{% block page_header %}
+<h1 class="page-title">Welcome Back</h1>
+<p class="page-subtitle">Sign in to your VisionLabel Pro account</p>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary">
+    <i class="fas fa-user-plus me-2"></i>
+    Create Account
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-icon">
+                <i class="fas fa-sign-in-alt"></i>
+            </div>
+            <h2 class="auth-title">Sign In to Your Account</h2>
+            <p class="auth-subtitle">Enter your credentials to access your video annotation projects</p>
+        </div>
+        
+        <form method="POST" class="auth-form">
+            {{ form.hidden_tag() }}
+            
+            <div class="form-group">
+                {{ form.email.label(class="form-label") }}
+                {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="Enter your email address") }}
+                {% if form.email.errors %}
+                    <div class="invalid-feedback">
+                        {{ form.email.errors[0] }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                {{ form.password.label(class="form-label") }}
+                {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="Enter your password") }}
+                {% if form.password.errors %}
+                    <div class="invalid-feedback">
+                        {{ form.password.errors[0] }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <div class="form-check">
+                    {{ form.remember_me(class="form-check-input") }}
+                    {{ form.remember_me.label(class="form-check-label") }}
+                </div>
+            </div>
+            
+            <div class="form-group">
+                {{ form.submit(class="btn btn-primary btn-lg w-100") }}
+            </div>
+        </form>
+        
+        <div class="auth-footer">
+            <div class="auth-links">
+                <p class="auth-link-text">
+                    Don't have an account? 
+                    <a href="{{ url_for('auth.register') }}" class="auth-link">Create one now</a>
+                </p>
+            </div>
+            
+            <div class="demo-info">
+                <div class="demo-card">
+                    <h4 class="demo-title">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Demo Account
+                    </h4>
+                    <p class="demo-description">
+                        Try VisionLabel Pro with our demo account:
+                    </p>
+                    <div class="demo-credentials">
+                        <div class="credential-item">
+                            <span class="credential-label">Email:</span>
+                            <code class="credential-value">demo@visionlabel.pro</code>
+                            <button type="button" class="btn btn-outline-secondary btn-sm copy-btn" onclick="copyToClipboard('demo@visionlabel.pro')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <div class="credential-item">
+                            <span class="credential-label">Password:</span>
+                            <code class="credential-value">demo123</code>
+                            <button type="button" class="btn btn-outline-secondary btn-sm copy-btn" onclick="copyToClipboard('demo123')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-success btn-sm w-100 mt-3" onclick="fillDemoCredentials()">
+                        <i class="fas fa-magic me-2"></i>
+                        Use Demo Account
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        if (window.VisionLabel) {
+            window.VisionLabel.showNotification('Copied to clipboard!', 'success');
+        }
+    }).catch(function(err) {
+        console.error('Could not copy text: ', err);
+    });
+}
+
+function fillDemoCredentials() {
+    document.getElementById('email').value = 'demo@visionlabel.pro';
+    document.getElementById('password').value = 'demo123';
+    document.getElementById('remember_me').checked = true;
+    
+    if (window.VisionLabel) {
+        window.VisionLabel.showNotification('Demo credentials filled!', 'info');
+    }
+}
+</script>
+
+<style>
+/* Authentication Styles */
+.auth-container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: var(--space-4);
+}
+
+.auth-card {
+    background: #ffffff;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+
+.auth-header {
+    text-align: center;
+    padding: var(--space-8) var(--space-6) var(--space-6);
+    background: linear-gradient(135deg, var(--blue-50), var(--blue-100));
+    border-bottom: 1px solid var(--blue-200);
+}
+
+.auth-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--blue-500), var(--blue-600));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--space-4);
+    color: white;
+    font-size: var(--font-2xl);
+    box-shadow: var(--shadow-md);
+}
+
+.auth-title {
+    font-size: var(--font-2xl);
+    font-weight: var(--font-bold);
+    color: var(--blue-900);
+    margin-bottom: var(--space-2);
+}
+
+.auth-subtitle {
+    color: var(--blue-700);
+    margin: 0;
+}
+
+.auth-form {
+    padding: var(--space-6);
+}
+
+.form-group {
+    margin-bottom: var(--space-4);
+}
+
+.form-label {
+    font-weight: var(--font-medium);
+    color: var(--gray-700);
+    margin-bottom: var(--space-2);
+    display: block;
+}
+
+.form-control {
+    background: #ffffff;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+    font-size: var(--font-base);
+    color: var(--gray-900);
+    transition: all 0.15s ease;
+    width: 100%;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--blue-500);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-control.is-invalid {
+    border-color: var(--red-500);
+}
+
+.invalid-feedback {
+    color: var(--red-600);
+    font-size: var(--font-sm);
+    margin-top: var(--space-1);
+}
+
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.form-check-input {
+    margin: 0;
+}
+
+.form-check-label {
+    font-size: var(--font-sm);
+    color: var(--gray-600);
+    margin: 0;
+}
+
+.auth-footer {
+    padding: var(--space-6);
+    background: var(--gray-50);
+    border-top: 1px solid var(--gray-200);
+}
+
+.auth-links {
+    text-align: center;
+    margin-bottom: var(--space-6);
+}
+
+.auth-link-text {
+    color: var(--gray-600);
+    margin: 0;
+}
+
+.auth-link {
+    color: var(--blue-600);
+    text-decoration: none;
+    font-weight: var(--font-medium);
+}
+
+.auth-link:hover {
+    color: var(--blue-700);
+    text-decoration: underline;
+}
+
+.demo-info {
+    border-top: 1px solid var(--gray-200);
+    padding-top: var(--space-6);
+}
+
+.demo-card {
+    background: var(--green-50);
+    border: 1px solid var(--green-200);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+}
+
+.demo-title {
+    font-size: var(--font-base);
+    font-weight: var(--font-semibold);
+    color: var(--green-800);
+    margin-bottom: var(--space-2);
+    display: flex;
+    align-items: center;
+}
+
+.demo-description {
+    font-size: var(--font-sm);
+    color: var(--green-700);
+    margin-bottom: var(--space-3);
+}
+
+.demo-credentials {
+    display: grid;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+.credential-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-sm);
+}
+
+.credential-label {
+    color: var(--green-700);
+    font-weight: var(--font-medium);
+    min-width: 70px;
+}
+
+.credential-value {
+    background: var(--green-100);
+    color: var(--green-800);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-family: 'Courier New', monospace;
+    flex: 1;
+}
+
+.copy-btn {
+    padding: var(--space-1);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.copy-btn i {
+    font-size: var(--font-xs);
+}
+
+@media (max-width: 768px) {
+    .auth-container {
+        padding: var(--space-2);
+    }
+    
+    .auth-header {
+        padding: var(--space-6) var(--space-4) var(--space-4);
+    }
+    
+    .auth-form {
+        padding: var(--space-4);
+    }
+    
+    .auth-footer {
+        padding: var(--space-4);
+    }
+    
+    .credential-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--space-1);
+    }
+    
+    .credential-label {
+        min-width: auto;
+    }
+}
+</style>
+{% endblock %} 

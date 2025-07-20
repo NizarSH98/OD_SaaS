@@ -1,1116 +1,583 @@
 {% extends "base.html" %}
 
-{% block title %}Annotate - {{ metadata.video_name }}{% endblock %}
+{% block title %}Annotate - {{ metadata.video_name }} - VisionLabel Pro{% endblock %}
 
 {% block extra_css %}
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@recogito/annotorious@2.7.10/dist/annotorious.min.css">
 <style>
-/* Reset base template constraints */
-body {
-    margin: 0;
-    padding: 0;
-    overflow-x: hidden;
+/* Full-screen annotation workspace override */
+.main-content {
+    position: relative;
+    overflow: hidden;
 }
 
-main.container {
-    max-width: none;
+.page-content {
     padding: 0;
-    margin: 0;
+    height: calc(100vh - var(--topbar-height));
+    overflow: hidden;
 }
 
-/* Full-screen workspace */
+/* Annotation workspace layout */
 .annotation-workspace {
-    width: 100vw;
-    height: 100vh;
-    background: #f8f9fa;
+    height: 100%;
     display: flex;
     flex-direction: column;
+    background: var(--gray-50);
 }
 
-/* Top toolbar */
-.annotation-toolbar {
-    background: white;
-    border-bottom: 1px solid #dee2e6;
-    padding: 12px 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-    flex-shrink: 0;
-}
-
-.toolbar-content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    max-width: 100%;
-}
-
-.project-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+.workspace-main {
     flex: 1;
-    min-width: 0;
-}
-
-.project-icon {
-    width: 32px;
-    height: 32px;
-    background: #007bff;
-    border-radius: 6px;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    flex-shrink: 0;
-}
-
-.project-details h1 {
-    font-size: 16px;
-    font-weight: 600;
-    color: #212529;
-    margin: 0;
-    white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 400px;
 }
 
-.project-details p {
-    font-size: 12px;
-    color: #6c757d;
-    margin: 0;
-}
-
-.toolbar-actions {
-    display: flex;
-    gap: 8px;
-    flex-shrink: 0;
-}
-
-/* Main workspace */
-.main-workspace {
-    flex: 1;
-    display: grid;
-    grid-template-columns: 1fr 300px;
-    min-height: 0;
-}
-
-/* Canvas area */
-.canvas-area {
-    background: white;
-    border-right: 1px solid #dee2e6;
+.workspace-sidebar {
+    width: 320px;
+    background: #ffffff;
+    border-right: 1px solid var(--gray-200);
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
-/* Frame controls */
-.frame-controls {
-    background: #f8f9fa;
-    border-bottom: 1px solid #dee2e6;
-    padding: 12px 20px;
+.workspace-content {
+    flex: 1;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-shrink: 0;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
 }
 
+/* Sidebar sections */
+.sidebar-section {
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.sidebar-section:last-child {
+    border-bottom: none;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.section-title {
+    font-size: var(--font-sm);
+    font-weight: var(--font-semibold);
+    color: var(--gray-900);
+    margin-bottom: var(--space-3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Navigation controls */
 .frame-navigation {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
 }
 
-.nav-btn {
+.nav-button {
     width: 36px;
     height: 36px;
-    border: 1px solid #ced4da;
-    background: white;
-    border-radius: 6px;
+    border: 1px solid var(--gray-300);
+    background: #ffffff;
+    border-radius: var(--radius-md);
     display: flex;
     align-items: center;
     justify-content: center;
+    color: var(--gray-600);
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.15s ease;
 }
 
-.nav-btn:hover:not(:disabled) {
-    background: #f8f9fa;
-    border-color: #adb5bd;
+.nav-button:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-400);
+    color: var(--gray-800);
 }
 
-.nav-btn:disabled {
+.nav-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
-.frame-input {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: white;
-    border: 1px solid #ced4da;
-    border-radius: 6px;
-    padding: 0 12px;
-    height: 36px;
-}
-
-.frame-input input {
-    border: none;
-    outline: none;
-    width: 50px;
+.frame-info {
+    flex: 1;
     text-align: center;
-    font-weight: 500;
-    background: transparent;
 }
 
-.frame-progress {
+.frame-current {
+    font-size: var(--font-lg);
+    font-weight: var(--font-semibold);
+    color: var(--gray-900);
+}
+
+.frame-total {
+    font-size: var(--font-sm);
+    color: var(--gray-600);
+}
+
+/* Annotation tools */
+.annotation-tools {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.tool-button {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border: 1px solid var(--gray-200);
+    background: #ffffff;
+    border-radius: var(--radius-md);
+    color: var(--gray-700);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: var(--font-sm);
 }
 
-.progress-bar {
-    width: 120px;
-    height: 6px;
-    background: #e9ecef;
-    border-radius: 3px;
-    overflow: hidden;
+.tool-button:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-300);
 }
 
-.progress-fill {
-    height: 100%;
-    background: #007bff;
-    transition: width 0.3s ease;
+.tool-button.active {
+    background: var(--blue-50);
+    border-color: var(--blue-300);
+    color: var(--blue-700);
 }
 
-/* Canvas container */
-.canvas-container {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    background: #f8f9fa;
-    position: relative;
-    overflow: auto;
+.tool-icon {
+    width: 16px;
+    text-align: center;
 }
 
-.image-wrapper {
-    position: relative;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    overflow: hidden;
+/* Class selector */
+.class-selector {
+    margin-bottom: var(--space-4);
 }
 
-.canvas-image {
-    display: block;
-    max-width: calc(100vw - 380px);
-    max-height: calc(100vh - 200px);
-    width: auto;
-    height: auto;
-    cursor: crosshair;
-    user-select: none;
-    -webkit-user-select: none;
-}
-
-/* Annotation overlay */
-.annotation-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
+.class-input {
     width: 100%;
-    height: 100%;
-    pointer-events: none;
+    padding: var(--space-2);
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-md);
+    font-size: var(--font-sm);
 }
 
-/* Bounding boxes */
-.bbox {
-    position: absolute;
-    border: 2px solid #007bff;
-    background: rgba(0, 123, 255, 0.1);
-    cursor: move;
-    pointer-events: all;
-    border-radius: 2px;
-    transition: border-color 0.15s;
-}
-
-.bbox:hover {
-    border-color: #0056b3;
-    background: rgba(0, 123, 255, 0.15);
-}
-
-.bbox.selected {
-    border-color: #dc3545;
-    background: rgba(220, 53, 69, 0.1);
-    box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2);
-}
-
-.bbox-label {
-    position: absolute;
-    top: -20px;
-    left: 0;
-    background: #007bff;
-    color: white;
-    padding: 2px 6px;
-    font-size: 11px;
-    font-weight: 500;
-    border-radius: 2px;
-    white-space: nowrap;
-    pointer-events: none;
-}
-
-.bbox.selected .bbox-label {
-    background: #dc3545;
-}
-
-/* Tools panel */
-.tools-panel {
-    background: white;
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-}
-
-.tools-header {
-    padding: 16px;
-    border-bottom: 1px solid #dee2e6;
-    background: #f8f9fa;
-}
-
-.tools-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #212529;
-    margin: 0;
-}
-
-.tools-content {
-    padding: 16px;
-    flex: 1;
-}
-
-.tool-section {
-    margin-bottom: 20px;
-}
-
-.tool-label {
-    font-size: 13px;
-    font-weight: 500;
-    color: #495057;
-    margin-bottom: 8px;
-    display: block;
-}
-
-/* Example box */
-.example-box-container {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-    padding: 16px;
-    margin-bottom: 16px;
-    position: relative;
-}
-
-.example-box-wrapper {
-    position: relative;
-    height: 120px;
-    background: white;
-    border: 1px dashed #ced4da;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.example-box {
-    position: absolute;
-    border: 2px solid #007bff;
-    background: rgba(0, 123, 255, 0.1);
-    border-radius: 2px;
-    cursor: move;
-    min-width: 20px;
-    min-height: 20px;
-    width: 60px;
-    height: 40px;
-}
-
-.example-box .bbox-label {
-    background: #007bff;
-}
-
-.resize-handle {
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    background: #dc3545;
-    border: 1px solid white;
-    border-radius: 50%;
-}
-
-.resize-handle.nw { top: -4px; left: -4px; cursor: nw-resize; }
-.resize-handle.ne { top: -4px; right: -4px; cursor: ne-resize; }
-.resize-handle.sw { bottom: -4px; left: -4px; cursor: sw-resize; }
-.resize-handle.se { bottom: -4px; right: -4px; cursor: se-resize; }
-
-/* Form controls */
-.label-input {
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid #ced4da;
-    border-radius: 6px;
-    font-size: 14px;
-    margin-bottom: 8px;
-}
-
-.label-input:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
-}
-
-.label-suggestions {
+.class-suggestions {
+    margin-top: var(--space-2);
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
-    margin-bottom: 16px;
+    gap: var(--space-1);
 }
 
-.suggestion-tag {
-    padding: 4px 8px;
-    background: #f8f9fa;
-    border: 1px solid #ced4da;
-    border-radius: 12px;
-    font-size: 11px;
+.class-suggestion {
+    padding: var(--space-1) var(--space-2);
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-xs);
+    color: var(--gray-700);
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.15s ease;
 }
 
-.suggestion-tag:hover {
-    background: #e9ecef;
-}
-
-/* Checkbox for single object mode */
-.checkbox-container {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 16px;
-}
-
-.checkbox-container input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-}
-
-.checkbox-container label {
-    font-size: 13px;
-    color: #495057;
-    cursor: pointer;
-    margin: 0;
-}
-
-.action-btn {
-    width: 100%;
-    padding: 10px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-    transition: all 0.15s;
-    margin-bottom: 8px;
-}
-
-.action-btn.danger {
-    background: #dc3545;
-    color: white;
-}
-
-.action-btn.danger:hover:not(:disabled) {
-    background: #c82333;
-}
-
-.action-btn.secondary {
-    background: #f8f9fa;
-    color: #495057;
-    border: 1px solid #ced4da;
-}
-
-.action-btn.secondary:hover {
-    background: #e9ecef;
-}
-
-.action-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+.class-suggestion:hover {
+    background: var(--blue-100);
+    border-color: var(--blue-300);
+    color: var(--blue-700);
 }
 
 /* Annotations list */
-.annotations-section {
-    border-top: 1px solid #dee2e6;
-    padding: 16px;
-    background: #f8f9fa;
-}
-
-.annotations-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-}
-
-.annotations-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: #212529;
-    margin: 0;
-}
-
-.annotation-count {
-    background: #007bff;
-    color: white;
-    padding: 2px 6px;
-    border-radius: 8px;
-    font-size: 11px;
-    font-weight: 500;
-}
-
 .annotations-list {
-    max-height: 200px;
-    overflow-y: auto;
+    display: grid;
+    gap: var(--space-2);
 }
 
 .annotation-item {
-    padding: 8px;
-    background: white;
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
-    margin-bottom: 6px;
+    padding: var(--space-3);
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
     cursor: pointer;
-    transition: all 0.15s;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    transition: all 0.15s ease;
 }
 
 .annotation-item:hover {
-    border-color: #007bff;
+    background: #ffffff;
+    border-color: var(--gray-300);
+    box-shadow: var(--shadow-sm);
 }
 
 .annotation-item.selected {
-    border-color: #dc3545;
-    background: #fff5f5;
+    background: var(--blue-50);
+    border-color: var(--blue-300);
 }
 
-.annotation-info {
-    flex: 1;
-    min-width: 0;
+.annotation-class {
+    font-weight: var(--font-medium);
+    color: var(--gray-900);
+    margin-bottom: var(--space-1);
 }
 
-.label-name {
-    font-weight: 500;
-    font-size: 12px;
-    color: #212529;
+.annotation-coords {
+    font-size: var(--font-xs);
+    color: var(--gray-600);
+    font-family: 'Courier New', monospace;
 }
 
-.size-info {
-    font-size: 10px;
-    color: #6c757d;
+.annotation-actions {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
 }
 
-.delete-btn {
-    padding: 4px;
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
-    color: #dc3545;
+.action-button {
+    padding: var(--space-1) var(--space-2);
+    border: none;
+    background: var(--gray-200);
+    border-radius: var(--radius-sm);
+    color: var(--gray-600);
     cursor: pointer;
-    font-size: 10px;
-    transition: all 0.15s;
+    font-size: var(--font-xs);
+    transition: all 0.15s ease;
 }
 
-.delete-btn:hover {
-    background: #fff5f5;
+.action-button:hover {
+    background: var(--gray-300);
+    color: var(--gray-800);
 }
 
-.empty-state {
-    text-align: center;
-    padding: 20px;
-    color: #6c757d;
-    font-size: 12px;
+.action-button.delete:hover {
+    background: var(--red-100);
+    color: var(--red-600);
 }
 
-/* Responsive */
+/* Image viewer */
+.image-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gray-100);
+    position: relative;
+    overflow: hidden;
+}
+
+.image-viewer {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    cursor: crosshair;
+}
+
+.image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+}
+
+/* Loading states */
+.loading-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--gray-500);
+}
+
+.loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--gray-200);
+    border-top-color: var(--blue-500);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: var(--space-4);
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Zoom controls */
+.zoom-controls {
+    position: absolute;
+    bottom: var(--space-4);
+    right: var(--space-4);
+    display: flex;
+    gap: var(--space-2);
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    border-radius: var(--radius-lg);
+    padding: var(--space-2);
+    box-shadow: var(--shadow-lg);
+}
+
+.zoom-button {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.zoom-button:hover {
+    background: var(--gray-100);
+    color: var(--gray-800);
+}
+
+/* Responsive design */
 @media (max-width: 1024px) {
-    .main-workspace {
-        grid-template-columns: 1fr;
-        grid-template-rows: 1fr auto;
+    .workspace-sidebar {
+        width: 280px;
+    }
+}
+
+@media (max-width: 768px) {
+    .workspace-main {
+        flex-direction: column;
     }
     
-    .tools-panel {
-        max-height: 40vh;
-        border-top: 1px solid #dee2e6;
+    .workspace-sidebar {
+        width: 100%;
+        height: 200px;
+        border-right: none;
+        border-bottom: 1px solid var(--gray-200);
+        flex-direction: row;
+        overflow-x: auto;
     }
+    
+    .sidebar-section {
+        min-width: 200px;
+        border-right: 1px solid var(--gray-200);
+        border-bottom: none;
+    }
+}
+
+/* Annotation-specific overrides */
+.a9s-annotation {
+    stroke: var(--blue-500) !important;
+    stroke-width: 2 !important;
+}
+
+.a9s-annotation.selected {
+    stroke: var(--green-500) !important;
+    stroke-width: 3 !important;
+}
+
+.a9s-toolbar {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(8px) !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: var(--shadow-lg) !important;
 }
 </style>
 {% endblock %}
 
+{% block page_header %}
+<h1 class="page-title">{{ metadata.video_name }}</h1>
+<p class="page-subtitle">Annotation Workspace</p>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{{ url_for('main.export_page', project_id=project_id) }}" class="btn btn-success">
+    <i class="fas fa-download me-2"></i>
+    Export Dataset
+</a>
+<a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+    <i class="fas fa-home me-2"></i>
+    Dashboard
+</a>
+{% endblock %}
+
 {% block content %}
-<!-- Toolbar -->
-<div class="annotation-toolbar">
-    <div class="toolbar-content">
-        <div class="project-info">
-            <div class="project-icon">
-                <i class="fas fa-video"></i>
-            </div>
-            <div class="project-details">
-                <h1>{{ metadata.video_name }}</h1>
-                <p>{{ metadata.extracted_count }} frames • {{ "%.1f"|format(metadata.duration) }}s</p>
-            </div>
-        </div>
-        <div class="toolbar-actions">
-            <button class="btn btn-sm btn-outline-secondary" onclick="toggleAutoSave()" id="autoSaveBtn">
-                <i class="fas fa-save"></i> Auto Save
-            </button>
-            <a href="{{ url_for('main.export_page', project_id=project_id) }}" class="btn btn-sm btn-success">
-                <i class="fas fa-download"></i> Export
-            </a>
-            <a href="{{ url_for('main.index') }}" class="btn btn-sm btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i> Back
-            </a>
-        </div>
-    </div>
-</div>
-<br>
-
-
-<div class="annotation-workspace">
-   
-    
-
-
-<!-- Main workspace -->
-<div class="main-workspace">
-    <!-- Canvas area -->
-    <div class="canvas-area">
-        <!-- Frame controls -->
-        <div class="frame-controls">
-            <div class="frame-navigation">
-                <button class="nav-btn" onclick="previousFrame()" id="prevBtn">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-                <div class="frame-input">
-                    <span>Frame</span>
-                    <input type="number" id="frameInput" value="{{ current_frame }}" 
-                           min="0" max="{{ metadata.extracted_count - 1 }}" 
-                           onchange="goToFrame(this.value)">
-                    <span>/ {{ metadata.extracted_count - 1 }}</span>
-                </div>
-                <button class="nav-btn" onclick="nextFrame()" id="nextBtn">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-            </div>
-            <div class="frame-progress">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-                <span id="progressText">0%</span>
-            </div>
-        </div>
-
-        <!-- Canvas -->
-        <div class="canvas-container">
-            <div class="image-wrapper" id="imageWrapper">
-                <img src="{{ url_for('main.get_frame', project_id=project_id, frame_index=current_frame) }}" 
-                     alt="Frame {{ current_frame }}" 
-                     class="canvas-image" 
-                     id="canvasImage">
-                <div class="annotation-overlay" id="annotationOverlay"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tools panel -->
-    <div class="tools-panel">
-        <div class="tools-header">
-            <h2 class="tools-title">Annotation Tools</h2>
-        </div>
-        
-        <div class="tools-content">
-            <div class="tool-section">
-                <label class="tool-label">Bounding Box Size</label>
-                <div class="example-box-container">
-                    <div class="example-box-wrapper">
-                        <div class="example-box" id="exampleBox">
-                            <div class="bbox-label">Example</div>
-                            <div class="resize-handle nw"></div>
-                            <div class="resize-handle ne"></div>
-                            <div class="resize-handle sw"></div>
-                            <div class="resize-handle se"></div>
-                        </div>
+<div class="annotation-workspace" 
+     data-project-id="{{ project_id }}"
+     data-current-frame="{{ current_frame or 0 }}"
+     data-total-frames="{{ metadata.total_frames }}"
+     data-video-name="{{ metadata.video_name }}">
+    <div class="workspace-main">
+        <!-- Left Sidebar - Tools and Annotations -->
+        <div class="workspace-sidebar">
+            <!-- Frame Navigation -->
+            <div class="sidebar-section">
+                <h3 class="section-title">Navigation</h3>
+                <div class="frame-navigation">
+                    <button class="nav-button" id="prevFrame" title="Previous Frame (←)">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div class="frame-info">
+                        <div class="frame-current" id="currentFrame">1</div>
+                        <div class="frame-total">of <span id="totalFrames">{{ metadata.total_frames }}</span></div>
                     </div>
-                    <small style="color: #6c757d; margin-top: 8px; display: block;">
-                        Resize this box to set the size for new annotations
-                    </small>
+                    <button class="nav-button" id="nextFrame" title="Next Frame (→)">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                
+                <div class="frame-actions">
+                    <input type="range" class="form-range" id="frameSlider" 
+                           min="0" max="{{ metadata.total_frames - 1 }}" value="0"
+                           title="Frame Slider">
                 </div>
             </div>
             
-            <div class="tool-section">
-                <label class="tool-label">Object Label</label>
-                <input type="text" class="label-input" id="labelInput" placeholder="Enter label..." value="object">
-                <div class="label-suggestions">
-                    <span class="suggestion-tag" onclick="setLabel('person')">person</span>
-                    <span class="suggestion-tag" onclick="setLabel('ball')">ball</span>
-                    <span class="suggestion-tag" onclick="setLabel('player')">player</span>
-                    <span class="suggestion-tag" onclick="setLabel('court')">court</span>
+            <!-- Annotation Tools -->
+            <div class="sidebar-section">
+                <h3 class="section-title">Tools</h3>
+                <div class="annotation-tools">
+                    <button class="tool-button active" id="selectTool" title="Select Tool (S)">
+                        <i class="tool-icon fas fa-mouse-pointer"></i>
+                        <span>Select</span>
+                    </button>
+                    <button class="tool-button" id="rectTool" title="Rectangle Tool (R)">
+                        <i class="tool-icon fas fa-square"></i>
+                        <span>Rectangle</span>
+                    </button>
+                    <button class="tool-button" id="pointTool" title="Point Tool (P)">
+                        <i class="tool-icon fas fa-crosshairs"></i>
+                        <span>Point</span>
+                    </button>
+                    <button class="tool-button" id="polygonTool" title="Polygon Tool (G)">
+                        <i class="tool-icon fas fa-draw-polygon"></i>
+                        <span>Polygon</span>
+                    </button>
+                </div>
+                
+                <div class="class-selector">
+                    <label for="classInput" class="form-label">Class Label</label>
+                    <input type="text" class="class-input" id="classInput" 
+                           placeholder="Enter object class..." value="object">
+                    <div class="class-suggestions" id="classSuggestions">
+                        <span class="class-suggestion">person</span>
+                        <span class="class-suggestion">car</span>
+                        <span class="class-suggestion">bicycle</span>
+                        <span class="class-suggestion">object</span>
+                    </div>
                 </div>
             </div>
             
-            <div class="tool-section">
-                <div class="checkbox-container">
-                    <input type="checkbox" id="singleObjectMode">
-                    <label for="singleObjectMode">One object per frame</label>
+            <!-- Current Annotations -->
+            <div class="sidebar-section">
+                <h3 class="section-title">Annotations (<span id="annotationCount">0</span>)</h3>
+                <div class="annotations-list" id="annotationsList">
+                    <!-- Annotations will be populated by JavaScript -->
                 </div>
-            </div>
-            
-            <div class="tool-section">
-                <button class="action-btn secondary" onclick="noObject()" style="background: #28a745; color: white; margin-bottom: 12px;">
-                    <i class="fas fa-forward"></i> No Object - Next Frame
-                </button>
-                <button class="action-btn danger" onclick="deleteSelected()" id="deleteBtn" disabled>
-                    <i class="fas fa-trash"></i> Delete Selected
-                </button>
-                <button class="action-btn secondary" onclick="clearAll()">
-                    <i class="fas fa-eraser"></i> Clear All
-                </button>
             </div>
         </div>
         
-        <div class="annotations-section">
-            <div class="annotations-header">
-                <h3 class="annotations-title">Annotations</h3>
-                <span class="annotation-count" id="annotationCount">0</span>
+        <!-- Main Content - Image Viewer -->
+        <div class="workspace-content">
+            <div class="image-container" id="imageContainer">
+                <div class="loading-container" id="loadingContainer">
+                    <div>
+                        <div class="loading-spinner"></div>
+                        <div>Loading frame...</div>
+                    </div>
+                </div>
+                <img class="image-viewer" id="annotationImage" style="display: none;">
+                <div class="image-overlay" id="imageOverlay"></div>
             </div>
-            <div class="annotations-list" id="annotationsList"></div>
-            <div class="empty-state" id="emptyState" style="display: none;">
-                <i class="fas fa-tags"></i><br>
-                No annotations yet<br>
-                <small>Click on the image to place boxes</small>
+            
+            <!-- Zoom Controls -->
+            <div class="zoom-controls">
+                <button class="zoom-button" id="zoomOut" title="Zoom Out (-)">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="zoom-button" id="zoomReset" title="Reset Zoom (0)">
+                    <i class="fas fa-expand-arrows-alt"></i>
+                </button>
+                <button class="zoom-button" id="zoomIn" title="Zoom In (+)">
+                    <i class="fas fa-plus"></i>
+                </button>
             </div>
         </div>
     </div>
 </div>
-</div>
+{% endblock %}
 
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/@recogito/annotorious@2.7.10/dist/annotorious.min.js"></script>
+<script src="{{ url_for('static', filename='js/annotation-workspace.js') }}"></script>
 <script>
-// Initialize from template data
-const templateData = {
-    currentFrame: {{ current_frame }},
-    totalFrames: {{ metadata.extracted_count }},
-    projectId: '{{ project_id }}'
-};
-
-// Global state  
-let currentFrame = templateData.currentFrame;
-let totalFrames = templateData.totalFrames;
-let projectId = templateData.projectId;
-let annotations = [];
-let selectedId = null;
-let autoSave = true;
-
-// Example box state
-let exampleBoxSize = { width: 60, height: 40 };
-let isResizingExample = false;
-let resizeHandle = null;
-let startPos = null;
-let startSize = null;
-
-// DOM elements
-let image, overlay, wrapper, exampleBox;
-
-// Initialize
+// Initialize annotation workspace
 document.addEventListener('DOMContentLoaded', function() {
-    image = document.getElementById('canvasImage');
-    overlay = document.getElementById('annotationOverlay');
-    wrapper = document.getElementById('imageWrapper');
-    exampleBox = document.getElementById('exampleBox');
-    
-    image.onload = loadAnnotations;
-    setupEvents();
-    setupExampleBox();
-    updateProgress();
-    loadAnnotations();
+    const workspaceEl = document.querySelector('.annotation-workspace');
+    const workspace = new AnnotationWorkspace({
+        projectId: workspaceEl.dataset.projectId,
+        currentFrame: parseInt(workspaceEl.dataset.currentFrame),
+        totalFrames: parseInt(workspaceEl.dataset.totalFrames),
+        videoName: workspaceEl.dataset.videoName
+    });
 });
 
-// Event setup
-function setupEvents() {
-    image.addEventListener('click', placeBox);
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    if (e.target.tagName === 'INPUT') return;
     
-    // Keyboard shortcuts
-    document.addEventListener('keydown', function(e) {
-        if (e.target.tagName === 'INPUT') return;
-        switch(e.key) {
-            case 'ArrowLeft': e.preventDefault(); previousFrame(); break;
-            case 'ArrowRight': e.preventDefault(); nextFrame(); break;
-            case 'Delete': e.preventDefault(); deleteSelected(); break;
-        }
-    });
-}
-
-// Example box setup
-function setupExampleBox() {
-    const handles = exampleBox.querySelectorAll('.resize-handle');
-    handles.forEach(handle => {
-        handle.addEventListener('mousedown', (e) => startResizeExample(e, handle.classList[1]));
-    });
-    
-    document.addEventListener('mousemove', handleExampleResize);
-    document.addEventListener('mouseup', stopExampleResize);
-}
-
-function startResizeExample(e, direction) {
-    e.preventDefault();
-    e.stopPropagation();
-    isResizingExample = true;
-    resizeHandle = direction;
-    
-    const rect = exampleBox.getBoundingClientRect();
-    startPos = { x: e.clientX, y: e.clientY };
-    startSize = { width: rect.width, height: rect.height };
-}
-
-function handleExampleResize(e) {
-    if (!isResizingExample) return;
-    
-    const deltaX = e.clientX - startPos.x;
-    const deltaY = e.clientY - startPos.y;
-    
-    let newWidth = startSize.width;
-    let newHeight = startSize.height;
-    
-    if (resizeHandle.includes('e')) newWidth = startSize.width + deltaX;
-    if (resizeHandle.includes('w')) newWidth = startSize.width - deltaX;
-    if (resizeHandle.includes('s')) newHeight = startSize.height + deltaY;
-    if (resizeHandle.includes('n')) newHeight = startSize.height - deltaY;
-    
-    newWidth = Math.max(20, Math.min(100, newWidth));
-    newHeight = Math.max(20, Math.min(80, newHeight));
-    
-    exampleBox.style.width = newWidth + 'px';
-    exampleBox.style.height = newHeight + 'px';
-    
-    exampleBoxSize = { width: newWidth, height: newHeight };
-}
-
-function stopExampleResize() {
-    if (isResizingExample) {
-        isResizingExample = false;
-        resizeHandle = null;
-        
-        // Resize all existing boxes in current frame
-        resizeAllBoxes();
-    }
-}
-
-function resizeAllBoxes() {
-    const frameAnnotations = annotations.filter(a => a.frame === currentFrame);
-    const imageRect = image.getBoundingClientRect();
-    
-    frameAnnotations.forEach(annotation => {
-        // Update annotation data
-        annotation.width = exampleBoxSize.width / imageRect.width;
-        annotation.height = exampleBoxSize.height / imageRect.height;
-        
-        // Update visual box
-        const box = overlay.querySelector(`[data-id="${annotation.id}"]`);
-        if (box) {
-            box.style.width = exampleBoxSize.width + 'px';
-            box.style.height = exampleBoxSize.height + 'px';
-        }
-    });
-    
-    updateAnnotationsList();
-    if (autoSave) saveAnnotations();
-}
-
-// Frame navigation
-function previousFrame() {
-    if (currentFrame > 0) {
-        saveAnnotations();
-        currentFrame--;
-        loadFrame();
-    }
-}
-
-function nextFrame() {
-    if (currentFrame < totalFrames - 1) {
-        saveAnnotations();
-        currentFrame++;
-        loadFrame();
-    }
-}
-
-function goToFrame(num) {
-    const frameNum = parseInt(num);
-    if (frameNum >= 0 && frameNum < totalFrames && frameNum !== currentFrame) {
-        saveAnnotations();
-        currentFrame = frameNum;
-        loadFrame();
-    }
-}
-
-function loadFrame() {
-    image.src = `/api/frame/${projectId}/${currentFrame}`;
-    document.getElementById('frameInput').value = currentFrame;
-    updateProgress();
-    updateNavButtons();
-}
-
-function updateProgress() {
-    const progress = totalFrames > 1 ? (currentFrame / (totalFrames - 1) * 100) : 0;
-    document.getElementById('progressFill').style.width = progress + '%';
-    document.getElementById('progressText').textContent = Math.round(progress) + '%';
-}
-
-function updateNavButtons() {
-    document.getElementById('prevBtn').disabled = currentFrame === 0;
-    document.getElementById('nextBtn').disabled = currentFrame === totalFrames - 1;
-}
-
-// Box placement
-function placeBox(e) {
-    if (e.target !== image) return;
-    
-    const singleMode = document.getElementById('singleObjectMode').checked;
-    
-    // Clear existing boxes if in single object mode
-    if (singleMode) {
-        const frameAnnotations = annotations.filter(a => a.frame === currentFrame);
-        frameAnnotations.forEach(annotation => {
-            annotations = annotations.filter(a => a.id !== annotation.id);
-            overlay.querySelector(`[data-id="${annotation.id}"]`)?.remove();
-        });
-    }
-    
-    clearSelection();
-    
-    const imageRect = image.getBoundingClientRect();
-    const clickX = e.clientX - imageRect.left;
-    const clickY = e.clientY - imageRect.top;
-    
-    // Center the box on click position
-    const boxX = clickX - exampleBoxSize.width / 2;
-    const boxY = clickY - exampleBoxSize.height / 2;
-    
-    // Create annotation data
-    const annotation = {
-        id: Date.now().toString(),
-        frame: currentFrame,
-        label: document.getElementById('labelInput').value || 'object',
-        x: boxX / imageRect.width,
-        y: boxY / imageRect.height,
-        width: exampleBoxSize.width / imageRect.width,
-        height: exampleBoxSize.height / imageRect.height
-    };
-    
-    annotations.push(annotation);
-    
-    // Create visual box
-    const box = document.createElement('div');
-    box.className = 'bbox';
-    box.dataset.id = annotation.id;
-    box.style.left = boxX + 'px';
-    box.style.top = boxY + 'px';
-    box.style.width = exampleBoxSize.width + 'px';
-    box.style.height = exampleBoxSize.height + 'px';
-    
-    setupBox(box, annotation);
-    overlay.appendChild(box);
-    
-    updateAnnotationsList();
-    if (autoSave) saveAnnotations();
-    
-    // Auto-advance in single object mode
-    if (singleMode) {
-        setTimeout(() => {
-            if (currentFrame < totalFrames - 1) {
-                nextFrame();
+    switch(e.key) {
+        case 'ArrowLeft':
+            e.preventDefault();
+            document.getElementById('prevFrame').click();
+            break;
+        case 'ArrowRight':
+            e.preventDefault();
+            document.getElementById('nextFrame').click();
+            break;
+        case 's':
+        case 'S':
+            e.preventDefault();
+            document.getElementById('selectTool').click();
+            break;
+        case 'r':
+        case 'R':
+            e.preventDefault();
+            document.getElementById('rectTool').click();
+            break;
+        case 'p':
+        case 'P':
+            e.preventDefault();
+            document.getElementById('pointTool').click();
+            break;
+        case 'g':
+        case 'G':
+            e.preventDefault();
+            document.getElementById('polygonTool').click();
+            break;
+        case 'Delete':
+        case 'Backspace':
+            if (window.annotationWorkspace) {
+                window.annotationWorkspace.deleteSelectedAnnotation();
             }
-        }, 500);
+            break;
+        case '+':
+        case '=':
+            e.preventDefault();
+            document.getElementById('zoomIn').click();
+            break;
+        case '-':
+            e.preventDefault();
+            document.getElementById('zoomOut').click();
+            break;
+        case '0':
+            e.preventDefault();
+            document.getElementById('zoomReset').click();
+            break;
     }
-}
-
-// Box setup and manipulation
-function setupBox(box, annotation) {
-    // Add label
-    const label = document.createElement('div');
-    label.className = 'bbox-label';
-    label.textContent = annotation.label;
-    box.appendChild(label);
-    
-    // Add event listeners
-    box.onclick = (e) => {
-        e.stopPropagation();
-        selectBox(annotation.id);
-    };
-}
-
-// Selection and UI
-function selectBox(id) {
-    clearSelection();
-    selectedId = id;
-    
-    const box = overlay.querySelector(`[data-id="${id}"]`);
-    const item = document.querySelector(`[data-id="${id}"].annotation-item`);
-    
-    if (box) box.classList.add('selected');
-    if (item) item.classList.add('selected');
-    
-    document.getElementById('deleteBtn').disabled = false;
-}
-
-function clearSelection() {
-    selectedId = null;
-    overlay.querySelectorAll('.bbox').forEach(box => box.classList.remove('selected'));
-    document.querySelectorAll('.annotation-item').forEach(item => item.classList.remove('selected'));
-    document.getElementById('deleteBtn').disabled = true;
-}
-
-function deleteSelected() {
-    if (selectedId) {
-        annotations = annotations.filter(a => a.id !== selectedId);
-        overlay.querySelector(`[data-id="${selectedId}"]`)?.remove();
-        clearSelection();
-        updateAnnotationsList();
-        if (autoSave) saveAnnotations();
-    }
-}
-
-function clearAll() {
-    if (confirm('Clear all annotations for this frame?')) {
-        annotations = annotations.filter(a => a.frame !== currentFrame);
-        overlay.innerHTML = '';
-        clearSelection();
-        updateAnnotationsList();
-        if (autoSave) saveAnnotations();
-    }
-}
-
-function setLabel(label) {
-    document.getElementById('labelInput').value = label;
-}
-
-function noObject() {
-    // Save current annotations (if any) and advance to next frame
-    saveAnnotations();
-    
-    if (currentFrame < totalFrames - 1) {
-        setTimeout(() => {
-            nextFrame();
-        }, 300);
-    } else {
-        // At last frame, show completion message
-        alert('Annotation complete! All frames processed.');
-    }
-}
-
-// Annotations list
-function updateAnnotationsList() {
-    const frameAnnotations = annotations.filter(a => a.frame === currentFrame);
-    const list = document.getElementById('annotationsList');
-    const empty = document.getElementById('emptyState');
-    const count = document.getElementById('annotationCount');
-    
-    count.textContent = frameAnnotations.length;
-    
-    if (frameAnnotations.length === 0) {
-        list.innerHTML = '';
-        empty.style.display = 'block';
-    } else {
-        empty.style.display = 'none';
-        list.innerHTML = frameAnnotations.map(a => `
-            <div class="annotation-item ${selectedId === a.id ? 'selected' : ''}" 
-                 data-id="${a.id}" onclick="selectBox('${a.id}')">
-                <div class="annotation-info">
-                    <div class="label-name">${a.label}</div>
-                    <div class="size-info">${Math.round(a.width * 100)}% × ${Math.round(a.height * 100)}%</div>
-                </div>
-                <button class="delete-btn" onclick="event.stopPropagation(); deleteAnnotation('${a.id}')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        `).join('');
-    }
-}
-
-function deleteAnnotation(id) {
-    annotations = annotations.filter(a => a.id !== id);
-    overlay.querySelector(`[data-id="${id}"]`)?.remove();
-    if (selectedId === id) clearSelection();
-    updateAnnotationsList();
-    if (autoSave) saveAnnotations();
-}
-
-// Data management
-function loadAnnotations() {
-    fetch(`/api/annotations/${projectId}/${currentFrame}`)
-        .then(r => r.json())
-        .then(data => {
-            annotations = annotations.filter(a => a.frame !== currentFrame);
-            if (data.annotations) {
-                annotations.push(...data.annotations);
-            }
-            renderAnnotations();
-        })
-        .catch(console.error);
-}
-
-function renderAnnotations() {
-    overlay.innerHTML = '';
-    clearSelection();
-    
-    const frameAnnotations = annotations.filter(a => a.frame === currentFrame);
-    const imageRect = image.getBoundingClientRect();
-    
-    frameAnnotations.forEach(annotation => {
-        const box = document.createElement('div');
-        box.className = 'bbox';
-        box.dataset.id = annotation.id;
-        box.style.left = (annotation.x * imageRect.width) + 'px';
-        box.style.top = (annotation.y * imageRect.height) + 'px';
-        box.style.width = (annotation.width * imageRect.width) + 'px';
-        box.style.height = (annotation.height * imageRect.height) + 'px';
-        
-        overlay.appendChild(box);
-        setupBox(box, annotation);
-    });
-    
-    updateAnnotationsList();
-}
-
-function saveAnnotations() {
-    const frameAnnotations = annotations.filter(a => a.frame === currentFrame);
-    
-    fetch(`/api/annotations/${projectId}/${currentFrame}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ annotations: frameAnnotations })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) console.log('Saved');
-    })
-    .catch(console.error);
-}
-
-function toggleAutoSave() {
-    autoSave = !autoSave;
-    const btn = document.getElementById('autoSaveBtn');
-    btn.classList.toggle('btn-outline-secondary', !autoSave);
-    btn.classList.toggle('btn-outline-success', autoSave);
-}
-
-// Initialize navigation
-updateNavButtons();
+});
 </script>
 {% endblock %} 

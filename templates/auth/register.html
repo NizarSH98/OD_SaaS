@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account - VisionLabel Pro{% endblock %}
+
+{% block page_header %}
+<h1 class="page-title">Join VisionLabel Pro</h1>
+<p class="page-subtitle">Create your account to start building professional datasets</p>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary">
+    <i class="fas fa-sign-in-alt me-2"></i>
+    Sign In
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-icon">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <h2 class="auth-title">Create Your Account</h2>
+            <p class="auth-subtitle">Start your journey with professional video annotation tools</p>
+        </div>
+        
+        <form method="POST" class="auth-form">
+            {{ form.hidden_tag() }}
+            
+            <div class="form-group">
+                {{ form.email.label(class="form-label") }}
+                {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="Enter your email address") }}
+                {% if form.email.errors %}
+                    <div class="invalid-feedback">
+                        {{ form.email.errors[0] }}
+                    </div>
+                {% endif %}
+                <div class="form-help">
+                    We'll use this email for your account and important notifications.
+                </div>
+            </div>
+            
+            <div class="form-group">
+                {{ form.password.label(class="form-label") }}
+                {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="Create a secure password") }}
+                {% if form.password.errors %}
+                    <div class="invalid-feedback">
+                        {{ form.password.errors[0] }}
+                    </div>
+                {% endif %}
+                <div class="form-help">
+                    Password must be at least 6 characters long.
+                </div>
+            </div>
+            
+            <div class="form-group">
+                {{ form.password_confirm.label(class="form-label") }}
+                {{ form.password_confirm(class="form-control" + (" is-invalid" if form.password_confirm.errors else ""), placeholder="Confirm your password") }}
+                {% if form.password_confirm.errors %}
+                    <div class="invalid-feedback">
+                        {{ form.password_confirm.errors[0] }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                {{ form.submit(class="btn btn-success btn-lg w-100") }}
+            </div>
+        </form>
+        
+        <div class="auth-footer">
+            <div class="auth-links">
+                <p class="auth-link-text">
+                    Already have an account? 
+                    <a href="{{ url_for('auth.login') }}" class="auth-link">Sign in here</a>
+                </p>
+            </div>
+            
+            <div class="features-info">
+                <h4 class="features-title">
+                    <i class="fas fa-star me-2"></i>
+                    What you get with VisionLabel Pro
+                </h4>
+                <div class="features-list">
+                    <div class="feature-item">
+                        <i class="fas fa-check-circle feature-icon"></i>
+                        <span>Professional video annotation tools</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-check-circle feature-icon"></i>
+                        <span>Multiple export formats (YOLO, COCO, Pascal VOC)</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-check-circle feature-icon"></i>
+                        <span>Project management and analytics</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-check-circle feature-icon"></i>
+                        <span>High-quality dataset generation</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Registration-specific styles extending auth styles */
+.form-help {
+    font-size: var(--font-xs);
+    color: var(--gray-600);
+    margin-top: var(--space-1);
+}
+
+.features-info {
+    border-top: 1px solid var(--gray-200);
+    padding-top: var(--space-6);
+}
+
+.features-title {
+    font-size: var(--font-base);
+    font-weight: var(--font-semibold);
+    color: var(--blue-800);
+    margin-bottom: var(--space-4);
+    display: flex;
+    align-items: center;
+}
+
+.features-list {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: var(--font-sm);
+    color: var(--gray-700);
+}
+
+.feature-icon {
+    color: var(--green-600);
+    font-size: var(--font-sm);
+    flex-shrink: 0;
+}
+
+/* Inherit auth styles from login page */
+.auth-container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: var(--space-4);
+}
+
+.auth-card {
+    background: #ffffff;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+
+.auth-header {
+    text-align: center;
+    padding: var(--space-8) var(--space-6) var(--space-6);
+    background: linear-gradient(135deg, var(--green-50), var(--green-100));
+    border-bottom: 1px solid var(--green-200);
+}
+
+.auth-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--green-500), var(--green-600));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--space-4);
+    color: white;
+    font-size: var(--font-2xl);
+    box-shadow: var(--shadow-md);
+}
+
+.auth-title {
+    font-size: var(--font-2xl);
+    font-weight: var(--font-bold);
+    color: var(--green-900);
+    margin-bottom: var(--space-2);
+}
+
+.auth-subtitle {
+    color: var(--green-700);
+    margin: 0;
+}
+
+.auth-form {
+    padding: var(--space-6);
+}
+
+.form-group {
+    margin-bottom: var(--space-4);
+}
+
+.form-label {
+    font-weight: var(--font-medium);
+    color: var(--gray-700);
+    margin-bottom: var(--space-2);
+    display: block;
+}
+
+.form-control {
+    background: #ffffff;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+    font-size: var(--font-base);
+    color: var(--gray-900);
+    transition: all 0.15s ease;
+    width: 100%;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--green-500);
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+}
+
+.form-control.is-invalid {
+    border-color: var(--red-500);
+}
+
+.invalid-feedback {
+    color: var(--red-600);
+    font-size: var(--font-sm);
+    margin-top: var(--space-1);
+}
+
+.auth-footer {
+    padding: var(--space-6);
+    background: var(--gray-50);
+    border-top: 1px solid var(--gray-200);
+}
+
+.auth-links {
+    text-align: center;
+    margin-bottom: var(--space-6);
+}
+
+.auth-link-text {
+    color: var(--gray-600);
+    margin: 0;
+}
+
+.auth-link {
+    color: var(--green-600);
+    text-decoration: none;
+    font-weight: var(--font-medium);
+}
+
+.auth-link:hover {
+    color: var(--green-700);
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .auth-container {
+        padding: var(--space-2);
+    }
+    
+    .auth-header {
+        padding: var(--space-6) var(--space-4) var(--space-4);
+    }
+    
+    .auth-form {
+        padding: var(--space-4);
+    }
+    
+    .auth-footer {
+        padding: var(--space-4);
+    }
+}
+</style>
+{% endblock %} 
