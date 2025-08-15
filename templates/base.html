@@ -60,13 +60,13 @@
                 
                 <ul class="nav-list">
                     <li class="nav-item">
-                        <a href="#" class="nav-link">
+                        <a href="{{ url_for('main.analytics') }}" class="nav-link {% if request.endpoint == 'main.analytics' %}active{% endif %}">
                             <i class="nav-icon fas fa-chart-bar"></i>
                             <span class="nav-text">Analytics</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="#" class="nav-link">
+                        <a href="{{ url_for('auth.profile') }}" class="nav-link {% if request.endpoint == 'auth.profile' %}active{% endif %}">
                             <i class="nav-icon fas fa-cog"></i>
                             <span class="nav-text">Settings</span>
                         </a>
@@ -90,7 +90,7 @@
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}"><i class="fas fa-user me-2"></i>Profile</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}"><i class="fas fa-cog me-2"></i>Settings</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Sign Out</a></li>
                     </ul>

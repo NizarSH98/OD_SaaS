@@ -1,9 +1,18 @@
 // Export Interface Functionality
 class ExportInterface {
     constructor(options) {
+        if (!options || !options.projectId) {
+            console.error('ExportInterface: missing required options');
+            return;
+        }
         this.projectId = options.projectId;
-        this.metadata = options.metadata;
-        this.stats = options.stats;
+        this.metadata = options.metadata || {};
+        this.stats = {
+            totalFrames: Number(options.stats?.totalFrames) || 0,
+            annotatedFrames: Number(options.stats?.annotatedFrames) || 0,
+            totalAnnotations: Number(options.stats?.totalAnnotations) || 0,
+            completionRate: Number(options.stats?.completionRate) || 0
+        };
         this.selectedFormat = null;
         this.chart = null;
         this.init();
@@ -23,15 +32,19 @@ class ExportInterface {
         
         formatButtons.forEach(button => {
             button.addEventListener('click', (e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 const format = button.getAttribute('data-format');
+                if (!format) return;
                 this.selectFormat(format);
             });
         });
         
         formatCards.forEach(card => {
-            card.addEventListener('click', () => {
+            card.addEventListener('click', (e) => {
+                e.preventDefault();
                 const format = card.getAttribute('data-format');
+                if (!format) return;
                 this.selectFormat(format);
             });
         });
@@ -84,29 +97,29 @@ class ExportInterface {
     }
     
     setupExportActions() {
-        document.getElementById('startExport').addEventListener('click', () => {
-            this.startExport();
-        });
+        const startBtn = document.getElementById('startExport');
+        if (startBtn) startBtn.addEventListener('click', () => this.startExport());
         
-        document.getElementById('cancelExport').addEventListener('click', () => {
-            this.resetSelection();
-        });
+        const cancelBtn = document.getElementById('cancelExport');
+        if (cancelBtn) cancelBtn.addEventListener('click', () => this.resetSelection());
         
-        document.getElementById('cancelExportModal').addEventListener('click', () => {
-            this.cancelExport();
-        });
+        const cancelModalBtn = document.getElementById('cancelExportModal');
+        if (cancelModalBtn) cancelModalBtn.addEventListener('click', () => this.cancelExport());
     }
     
     updateStats() {
-        document.getElementById('totalAnnotations').textContent = this.stats.totalAnnotations;
-        document.getElementById('completionRate').textContent = `${this.stats.completionRate}%`;
-        document.getElementById('annotatedCount').textContent = this.stats.annotatedFrames;
+        const totalAnnEl = document.getElementById('totalAnnotations');
+        const compRateEl = document.getElementById('completionRate');
+        const annotatedEl = document.getElementById('annotatedCount');
+        if (totalAnnEl) totalAnnEl.textContent = this.stats.totalAnnotations;
+        if (compRateEl) compRateEl.textContent = `${this.stats.completionRate}%`;
+        if (annotatedEl) annotatedEl.textContent = this.stats.annotatedFrames;
     }
     
     updateExportSummary() {
         if (!this.selectedFormat) return;
         
-        const frameSelection = document.querySelector('input[name="frameSelection"]:checked').value;
+        const frameSelection = document.querySelector('input[name="frameSelection"]:checked')?.value || 'all';
         const framesToExport = frameSelection === 'all' ? this.stats.totalFrames : this.stats.annotatedFrames;
         const quality = document.getElementById('imageQuality').value;
         
@@ -146,22 +159,24 @@ class ExportInterface {
             const response = await fetch(`/api/project/${this.projectId}/stats`);
             if (response.ok) {
                 const stats = await response.json();
-                this.createClassChart(stats.classes || []);
-                this.displayClassList(stats.classes || []);
+                this.createClassChartWithCounts(stats.class_distribution || {}, stats.classes || []);
+                this.displayClassListWithCounts(stats.class_distribution || {}, stats.classes || []);
             }
         } catch (error) {
             console.error('Error loading class distribution:', error);
         }
     }
     
-    createClassChart(classes) {
-        const ctx = document.getElementById('distributionChart').getContext('2d');
+    createClassChartWithCounts(classDist, classes) {
+        const canvas = document.getElementById('distributionChart');
+        if (!canvas || typeof Chart === 'undefined') return;
+        const ctx = canvas.getContext('2d');
         
         if (this.chart) {
             this.chart.destroy();
         }
         
-        if (classes.length === 0) {
+        if (!classes || classes.length === 0) {
             ctx.font = '16px Inter';
             ctx.fillStyle = '#6b7280';
             ctx.textAlign = 'center';
@@ -170,13 +185,14 @@ class ExportInterface {
         }
         
         const colors = this.generateColors(classes.length);
+        const counts = classes.map((c) => Number(classDist[c] || 0));
         
         this.chart = new Chart(ctx, {
             type: 'doughnut',
             data: {
                 labels: classes,
                 datasets: [{
-                    data: classes.map(() => Math.floor(Math.random() * 50) + 10), // Mock data
+                    data: counts,
                     backgroundColor: colors,
                     borderWidth: 2,
                     borderColor: '#ffffff'
@@ -201,10 +217,10 @@ class ExportInterface {
         });
     }
     
-    displayClassList(classes) {
+    displayClassListWithCounts(classDist, classes) {
         const classList = document.getElementById('classList');
         
-        if (classes.length === 0) {
+        if (!classes || classes.length === 0) {
             classList.innerHTML = '<div class="text-center text-muted">No classes defined yet</div>';
             return;
         }
@@ -215,7 +231,7 @@ class ExportInterface {
             <div class="class-item">
                 <div class="class-color" style="background-color: ${colors[index]}"></div>
                 <span class="class-name">${className}</span>
-                <span class="class-count">${Math.floor(Math.random() * 50) + 1}</span>
+                <span class="class-count">${Number(classDist[className] || 0)}</span>
             </div>
         `).join('');
     }
@@ -235,7 +251,11 @@ class ExportInterface {
     }
     
     async startExport() {
-        const frameSelection = document.querySelector('input[name="frameSelection"]:checked').value;
+        if (!this.selectedFormat) {
+            if (window.VisionLabel) window.VisionLabel.showNotification('Please select an export format first', 'error');
+            return;
+        }
+        const frameSelection = document.querySelector('input[name="frameSelection"]:checked')?.value || 'all';
         const quality = document.getElementById('imageQuality').value;
         
         const exportData = {
@@ -245,8 +265,9 @@ class ExportInterface {
         };
         
         // Show progress modal
-        const modal = new bootstrap.Modal(document.getElementById('exportModal'));
-        modal.show();
+        const modalEl = document.getElementById('exportModal');
+        const modal = modalEl ? new bootstrap.Modal(modalEl) : null;
+        if (modal) modal.show();
         
         try {
             const response = await fetch(`/api/export/${this.projectId}/${this.selectedFormat}`, {
@@ -267,7 +288,7 @@ class ExportInterface {
         } catch (error) {
             console.error('Export error:', error);
             this.showExportError(error.message);
-            modal.hide();
+            if (modal) modal.hide();
         }
     }
     
@@ -297,15 +318,13 @@ class ExportInterface {
             }
             
             // Update step
-            const stepIndex = Math.floor((progress / 100) * steps.length);
-            if (stepIndex !== currentStep && stepIndex < steps.length) {
-                currentStep = stepIndex;
-                progressStep.textContent = steps[currentStep];
-                progressDetails.textContent = `Processing... ${Math.floor(progress)}%`;
-            }
+            const stepIndex = Math.min(steps.length - 1, Math.floor((progress / 100) * steps.length));
+            currentStep = stepIndex;
+            if (progressStep) progressStep.textContent = steps[currentStep];
+            if (progressDetails) progressDetails.textContent = `Processing... ${Math.floor(progress)}%`;
             
-            progressBar.style.width = `${progress}%`;
-            progressPercentage.textContent = `${Math.floor(progress)}%`;
+            if (progressBar) progressBar.style.width = `${progress}%`;
+            if (progressPercentage) progressPercentage.textContent = `${Math.floor(progress)}%`;
             
         }, 500);
     }

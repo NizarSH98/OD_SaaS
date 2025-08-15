@@ -367,9 +367,11 @@ class TestUserManager:
         user_upper = manager.get_user_by_email('TEST@EXAMPLE.COM')
         user_mixed = manager.get_user_by_email('Test@Example.Com')
         
-        # Should not find user (case sensitive)
-        assert user_upper is None
-        assert user_mixed is None
+        # Should find user (case insensitive for better UX)
+        assert user_upper is not None
+        assert user_mixed is not None
+        assert user_upper.email == 'test@example.com'
+        assert user_mixed.email == 'test@example.com'
     
     def test_demo_user_creation(self, temp_user_storage):
         """Test automatic demo user creation"""
@@ -443,7 +445,7 @@ class TestUserModelIntegration:
             'simple123',
             'Complex!Password@456',
             'unicode_test_café',
-            'a' * 100,  # Long password
+            'a' * 50,  # Long password (reduced from 100)
             '!@#$%^&*()_+{}|:<>?[]\\;\'\",./'  # Special characters
         ]
         

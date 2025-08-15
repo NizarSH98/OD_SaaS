@@ -273,6 +273,9 @@
     max-height: 100%;
     object-fit: contain;
     cursor: crosshair;
+    pointer-events: auto;
+    position: relative;
+    z-index: 1;
 }
 
 .image-overlay {
@@ -281,7 +284,8 @@
     left: 0;
     right: 0;
     bottom: 0;
-    pointer-events: none;
+    pointer-events: auto;
+    z-index: 2;
 }
 
 /* Loading states */
@@ -385,6 +389,166 @@
     border-radius: var(--radius-md) !important;
     box-shadow: var(--shadow-lg) !important;
 }
+
+/* Sidebar toggle */
+.sidebar-toggle {
+    position: absolute;
+    top: 50%;
+    right: -16px;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--gray-300);
+    background: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    z-index: 10;
+    box-shadow: var(--shadow-sm);
+}
+
+.sidebar-toggle:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-400);
+    color: var(--gray-800);
+}
+
+.workspace-sidebar.collapsed {
+    width: 0;
+    overflow: hidden;
+}
+
+.workspace-sidebar.collapsed .sidebar-toggle {
+    right: -16px;
+}
+
+.workspace-sidebar.collapsed .sidebar-toggle i {
+    transform: rotate(180deg);
+}
+
+/* Bounding box settings */
+.bbox-settings {
+    margin-bottom: var(--space-4);
+}
+
+.setting-group {
+    margin-bottom: var(--space-3);
+}
+
+.setting-group label {
+    font-size: var(--font-sm);
+    font-weight: var(--font-medium);
+    color: var(--gray-700);
+    margin-bottom: var(--space-1);
+    display: block;
+}
+
+.setting-group input {
+    width: 100%;
+    padding: var(--space-2);
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-md);
+    font-size: var(--font-sm);
+}
+
+/* Shortcuts info */
+.shortcuts-info {
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--gray-200);
+}
+
+.shortcuts-info h4 {
+    font-size: var(--font-sm);
+    font-weight: var(--font-semibold);
+    color: var(--gray-900);
+    margin-bottom: var(--space-2);
+}
+
+.shortcuts-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.shortcuts-list li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-1);
+    font-size: var(--font-xs);
+    color: var(--gray-600);
+}
+
+.shortcuts-list kbd {
+    background: var(--gray-100);
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    padding: 2px 6px;
+    font-size: var(--font-xs);
+    font-family: monospace;
+    color: var(--gray-700);
+}
+
+/* Annotation tool */
+.annotation-tool {
+    margin-bottom: var(--space-4);
+}
+
+.annotation-tool .tool-button {
+    width: 100%;
+    justify-content: center;
+    font-weight: var(--font-medium);
+}
+
+/* Bounding box overlay */
+.bbox-overlay {
+    position: absolute;
+    border: 2px solid var(--blue-500);
+    background: rgba(59, 130, 246, 0.1);
+    pointer-events: auto;
+    z-index: 100;
+    cursor: pointer;
+}
+
+.bbox-overlay.selected {
+    border-color: var(--green-500);
+    background: rgba(34, 197, 94, 0.1);
+}
+
+.bbox-label {
+    position: absolute;
+    top: -20px;
+    left: 0;
+    background: var(--blue-500);
+    color: white;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-xs);
+    font-weight: var(--font-medium);
+    white-space: nowrap;
+}
+
+/* Resize handles for bounding boxes */
+.resize-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #ffffff;
+    border: 2px solid var(--blue-600);
+    border-radius: 2px;
+    z-index: 200;
+}
+.handle-nw { top: -6px; left: -6px; cursor: nwse-resize; }
+.handle-ne { top: -6px; right: -6px; cursor: nesw-resize; }
+.handle-sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
+.handle-se { bottom: -6px; right: -6px; cursor: nwse-resize; }
+
+.bbox-overlay { cursor: move; }
 </style>
 {% endblock %}
 
@@ -408,11 +572,16 @@
 <div class="annotation-workspace" 
      data-project-id="{{ project_id }}"
      data-current-frame="{{ current_frame or 0 }}"
-     data-total-frames="{{ metadata.total_frames }}"
+     data-total-frames="{{ metadata.extracted_frames }}"
      data-video-name="{{ metadata.video_name }}">
     <div class="workspace-main">
         <!-- Left Sidebar - Tools and Annotations -->
-        <div class="workspace-sidebar">
+        <div class="workspace-sidebar" id="workspaceSidebar">
+            <!-- Sidebar Toggle Button -->
+            <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            
             <!-- Frame Navigation -->
             <div class="sidebar-section">
                 <h3 class="section-title">Navigation</h3>
@@ -422,7 +591,7 @@
                     </button>
                     <div class="frame-info">
                         <div class="frame-current" id="currentFrame">1</div>
-                        <div class="frame-total">of <span id="totalFrames">{{ metadata.total_frames }}</span></div>
+                        <div class="frame-total">of <span id="totalFrames">{{ metadata.extracted_frames }}</span></div>
                     </div>
                     <button class="nav-button" id="nextFrame" title="Next Frame (→)">
                         <i class="fas fa-chevron-right"></i>
@@ -431,35 +600,45 @@
                 
                 <div class="frame-actions">
                     <input type="range" class="form-range" id="frameSlider" 
-                           min="0" max="{{ metadata.total_frames - 1 }}" value="0"
+                           min="0" max="{{ metadata.extracted_frames - 1 }}" value="0"
                            title="Frame Slider">
                 </div>
             </div>
             
-            <!-- Annotation Tools -->
+            <!-- Annotation Tool -->
             <div class="sidebar-section">
-                <h3 class="section-title">Tools</h3>
-                <div class="annotation-tools">
-                    <button class="tool-button active" id="selectTool" title="Select Tool (S)">
-                        <i class="tool-icon fas fa-mouse-pointer"></i>
-                        <span>Select</span>
-                    </button>
-                    <button class="tool-button" id="rectTool" title="Rectangle Tool (R)">
+                <h3 class="section-title">Bounding Box Tool</h3>
+                <div class="annotation-tool">
+                    <button class="tool-button active" id="bboxTool" title="Bounding Box Tool (B)">
                         <i class="tool-icon fas fa-square"></i>
-                        <span>Rectangle</span>
+                        <span>Bounding box tool</span>
                     </button>
-                    <button class="tool-button" id="pointTool" title="Point Tool (P)">
-                        <i class="tool-icon fas fa-crosshairs"></i>
-                        <span>Point</span>
-                    </button>
-                    <button class="tool-button" id="polygonTool" title="Polygon Tool (G)">
-                        <i class="tool-icon fas fa-draw-polygon"></i>
-                        <span>Polygon</span>
-                    </button>
+                </div>
+
+                <!-- Creation Mode Switcher -->
+                <div class="bbox-settings" id="creationModeSettings">
+                    <div class="setting-group">
+                        <label class="form-label">Creation Mode</label>
+                        <div class="btn-group w-100" role="group" aria-label="Creation mode">
+                            <button type="button" class="btn btn-outline-secondary" id="modeClick">Click</button>
+                            <button type="button" class="btn btn-outline-secondary active" id="modeDrag">Drag</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bbox-settings">
+                    <div class="setting-group">
+                        <label for="bboxWidth" class="form-label">Box Width (px)</label>
+                        <input type="number" class="form-control" id="bboxWidth" value="100" min="20" max="500">
+                    </div>
+                    <div class="setting-group">
+                        <label for="bboxHeight" class="form-label">Box Height (px)</label>
+                        <input type="number" class="form-control" id="bboxHeight" value="100" min="20" max="500">
+                    </div>
                 </div>
                 
                 <div class="class-selector">
-                    <label for="classInput" class="form-label">Class Label</label>
+                    <label for="classInput" class="form-label">Object Label</label>
                     <input type="text" class="class-input" id="classInput" 
                            placeholder="Enter object class..." value="object">
                     <div class="class-suggestions" id="classSuggestions">
@@ -468,6 +647,19 @@
                         <span class="class-suggestion">bicycle</span>
                         <span class="class-suggestion">object</span>
                     </div>
+                </div>
+                
+                <div class="shortcuts-info">
+                    <h4>Shortcuts</h4>
+                    <ul class="shortcuts-list">
+                        <li><kbd>B</kbd> - Bounding Box Tool</li>
+                        <li><kbd>C</kbd> - Click mode</li>
+                        <li><kbd>D</kbd> - Drag mode</li>
+                        <li><kbd>→</kbd> - Next Frame</li>
+                        <li><kbd>←</kbd> - Previous Frame</li>
+                        <li><kbd>N</kbd> - Next Frame (after annotation)</li>
+                        <li><kbd>Delete</kbd> - Delete selected</li>
+                    </ul>
                 </div>
             </div>
             
@@ -511,18 +703,41 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/@recogito/annotorious@2.7.10/dist/annotorious.min.js"></script>
 <script src="{{ url_for('static', filename='js/annotation-workspace.js') }}"></script>
 <script>
 // Initialize annotation workspace
 document.addEventListener('DOMContentLoaded', function() {
     const workspaceEl = document.querySelector('.annotation-workspace');
-    const workspace = new AnnotationWorkspace({
-        projectId: workspaceEl.dataset.projectId,
-        currentFrame: parseInt(workspaceEl.dataset.currentFrame),
-        totalFrames: parseInt(workspaceEl.dataset.totalFrames),
-        videoName: workspaceEl.dataset.videoName
-    });
+    if (workspaceEl) {
+        window.workspace = new AnnotationWorkspace();
+        
+        // Set up navigation buttons
+        const prevBtn = document.getElementById('prevFrame');
+        const nextBtn = document.getElementById('nextFrame');
+        const frameSlider = document.getElementById('frameSlider');
+        
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => window.workspace.previousFrame());
+        }
+        
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => window.workspace.nextFrame());
+        }
+        
+        if (frameSlider) {
+            frameSlider.addEventListener('input', (e) => {
+                window.workspace.goToFrame(parseInt(e.target.value));
+            });
+        }
+        
+        // Set up bounding box tool button
+        const bboxTool = document.getElementById('bboxTool');
+        if (bboxTool) {
+            bboxTool.addEventListener('click', () => {
+                window.workspace.toggleBoundingBoxMode();
+            });
+        }
+    }
 });
 
 // Keyboard shortcuts
@@ -532,50 +747,50 @@ document.addEventListener('keydown', function(e) {
     switch(e.key) {
         case 'ArrowLeft':
             e.preventDefault();
-            document.getElementById('prevFrame').click();
+            if (window.workspace) window.workspace.previousFrame();
             break;
         case 'ArrowRight':
             e.preventDefault();
-            document.getElementById('nextFrame').click();
+            if (window.workspace) window.workspace.nextFrame();
             break;
-        case 's':
-        case 'S':
+        case 'b':
+        case 'B':
             e.preventDefault();
-            document.getElementById('selectTool').click();
+            if (window.workspace) window.workspace.toggleBoundingBoxMode();
             break;
-        case 'r':
-        case 'R':
+        case 'c':
+        case 'C':
             e.preventDefault();
-            document.getElementById('rectTool').click();
+            document.getElementById('modeClick')?.click();
             break;
-        case 'p':
-        case 'P':
+        case 'd':
+        case 'D':
             e.preventDefault();
-            document.getElementById('pointTool').click();
+            document.getElementById('modeDrag')?.click();
             break;
-        case 'g':
-        case 'G':
+        case 'n':
+        case 'N':
             e.preventDefault();
-            document.getElementById('polygonTool').click();
+            if (window.workspace) window.workspace.nextFrameAfterAnnotation();
             break;
         case 'Delete':
         case 'Backspace':
-            if (window.annotationWorkspace) {
-                window.annotationWorkspace.deleteSelectedAnnotation();
+            if (window.workspace) {
+                window.workspace.deleteSelected();
             }
             break;
         case '+':
         case '=':
             e.preventDefault();
-            document.getElementById('zoomIn').click();
+            document.getElementById('zoomIn')?.click();
             break;
         case '-':
             e.preventDefault();
-            document.getElementById('zoomOut').click();
+            document.getElementById('zoomOut')?.click();
             break;
         case '0':
             e.preventDefault();
-            document.getElementById('zoomReset').click();
+            document.getElementById('zoomReset')?.click();
             break;
     }
 });

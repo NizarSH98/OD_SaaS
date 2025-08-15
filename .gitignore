@@ -1,3 +1,42 @@
+# Python cache and build
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# IDEs and editors
+.vscode/
+.idea/
+
+# Test/coverage artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# App runtime data (not for source control)
+uploads/
+frames/
+datasets/
+debug.log
+*.zip
+*.mp4
+
+# Local user store (generated at runtime)
+users.json
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

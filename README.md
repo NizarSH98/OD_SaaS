@@ -65,6 +65,23 @@ python app.py
 
 The application will start on `http://localhost:5000`
 
+### 4. Prepare for GitHub (Cleanup & Ignore)
+
+This project generates runtime data (videos, frames, datasets) that should not be committed.
+
+Already included `.gitignore` excludes:
+
+- `uploads/`, `frames/`, `datasets/` (runtime data)
+- `users.json` (local demo users)
+- caches: `__pycache__/`, `.pytest_cache/`, coverage, build folders
+
+You can safely remove local generated data to clean your workspace before pushing:
+
+```bash
+# illustrative only
+rm -rf uploads/* frames/* datasets/* debug.log
+```
+
 ## Usage Guide
 
 ### 1. Upload a Video

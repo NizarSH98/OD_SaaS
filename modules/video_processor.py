@@ -30,20 +30,33 @@ class VideoProcessor:
         # Generate unique project ID
         project_id = project_name or f"project_{uuid.uuid4().hex[:8]}"
         project_folder = os.path.join(self.frames_folder, project_id)
+        
+        # Ensure project folder exists
         os.makedirs(project_folder, exist_ok=True)
         
-        # Open video
+        # Open video (ensure release even on failure on Windows)
         cap = cv2.VideoCapture(video_path)
         if not cap.isOpened():
+            try:
+                cap.release()
+            except Exception:
+                pass
             raise ValueError(f"Could not open video file: {video_path}")
         
         # Get video properties
         fps = cap.get(cv2.CAP_PROP_FPS)
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         duration = total_frames / fps
+        frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         
-        # Calculate frame interval
-        frame_interval = int(fps * interval)
+        # Calculate frame interval with overflow protection
+        try:
+            frame_interval = int(fps * interval)
+            if frame_interval <= 0:
+                frame_interval = 1
+        except (OverflowError, ValueError):
+            frame_interval = 1
         
         extracted_frames = []
         frame_count = 0
@@ -68,7 +81,7 @@ class VideoProcessor:
         
         cap.release()
         
-        # Create metadata
+        # Create metadata (allow zero extracted frames; handle gracefully)
         metadata = {
             'project_id': project_id,
             'video_path': video_path,
@@ -76,11 +89,16 @@ class VideoProcessor:
             'fps': fps,
             'total_frames': total_frames,
             'duration': duration,
-            'interval': interval,
-            'extracted_count': extracted_count,
+            'frame_interval': interval,  # Store the original interval
+            'extracted_frames': extracted_count,
+            'frame_paths': extracted_frames,
+            'frame_size': [frame_width, frame_height],
             'created_at': datetime.now().isoformat(),
-            'frame_paths': extracted_frames
+            'updated_at': datetime.now().isoformat()
         }
+        
+        # Ensure project folder exists
+        os.makedirs(project_folder, exist_ok=True)
         
         # Save metadata
         metadata_path = os.path.join(project_folder, 'metadata.json')
@@ -96,14 +114,71 @@ class VideoProcessor:
             raise FileNotFoundError(f"Project metadata not found: {project_id}")
             
         with open(metadata_path, 'r') as f:
-            return json.load(f)
+            metadata = json.load(f)
+        
+        # Handle backward compatibility with old metadata format
+        if 'extracted_count' in metadata and 'extracted_frames' not in metadata:
+            metadata['extracted_frames'] = metadata['extracted_count']
+        
+        if 'interval' in metadata and 'frame_interval' not in metadata:
+            metadata['frame_interval'] = metadata['interval']
+        
+        # Check actual available frames and update count
+        project_folder = os.path.join(self.frames_folder, project_id)
+        if os.path.exists(project_folder):
+            frame_files = [f for f in os.listdir(project_folder) 
+                         if f.startswith('frame_') and f.endswith('.jpg')]
+            actual_frame_count = len(frame_files)
+            if actual_frame_count > 0:
+                metadata['extracted_frames'] = actual_frame_count
+        
+        # Ensure required fields exist
+        if 'frame_size' not in metadata:
+            # Try to get frame size from first frame if available
+            if metadata.get('frame_paths') and len(metadata['frame_paths']) > 0:
+                first_frame_path = metadata['frame_paths'][0]
+                if os.path.exists(first_frame_path):
+                    try:
+                        import cv2
+                        frame = cv2.imread(first_frame_path)
+                        if frame is not None:
+                            height, width = frame.shape[:2]
+                            metadata['frame_size'] = [width, height]
+                    except:
+                        metadata['frame_size'] = [640, 480]  # Default fallback
+            else:
+                metadata['frame_size'] = [640, 480]  # Default fallback
+        
+        return metadata
     
     def get_frame_path(self, project_id: str, frame_index: int) -> str:
         """Get path to specific frame"""
         metadata = self.get_project_metadata(project_id)
-        if frame_index < 0 or frame_index >= len(metadata['frame_paths']):
-            raise IndexError(f"Frame index {frame_index} out of range")
-        return metadata['frame_paths'][frame_index]
+        
+        # First try the expected path from metadata
+        if frame_index < len(metadata['frame_paths']):
+            expected_path = metadata['frame_paths'][frame_index]
+            if os.path.exists(expected_path):
+                return expected_path
+        
+        # If the expected frame doesn't exist, try to find available frames
+        project_folder = os.path.join(self.frames_folder, project_id)
+        if os.path.exists(project_folder):
+            # Get all frame files in the project folder
+            frame_files = [f for f in os.listdir(project_folder) 
+                         if f.startswith('frame_') and f.endswith('.jpg')]
+            frame_files.sort()  # Sort to get them in order
+            
+            if frame_files:
+                # If we have frames, try to map the requested index to available frames
+                if frame_index < len(frame_files):
+                    return os.path.join(project_folder, frame_files[frame_index])
+                else:
+                    # If requested index is beyond available frames, return the last frame
+                    return os.path.join(project_folder, frame_files[-1])
+        
+        # If no frames found, raise an error
+        raise FileNotFoundError(f"Frame {frame_index} not found for project {project_id}")
     
     def list_projects(self) -> List[dict]:
         """List all available projects"""
@@ -120,13 +195,14 @@ class VideoProcessor:
                         'id': project_dir,
                         'name': metadata.get('video_name', project_dir),
                         'created_at': metadata.get('created_at'),
-                        'frame_count': metadata.get('extracted_count', 0)
+                        'frame_count': metadata.get('extracted_frames', metadata.get('extracted_count', 0))
                     })
-                except:
+                except Exception as e:
+                    print(f"Error loading project {project_dir}: {e}")
                     # Skip invalid projects
                     continue
         
-        return sorted(projects, key=lambda x: x['created_at'], reverse=True)
+        return sorted(projects, key=lambda x: x.get('created_at', ''), reverse=True)
     
     def delete_project(self, project_id: str) -> bool:
         """Delete a project and all its frames"""

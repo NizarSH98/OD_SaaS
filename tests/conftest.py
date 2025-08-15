@@ -12,6 +12,7 @@ import os
 import json
 import cv2
 import numpy as np
+import bcrypt
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
@@ -100,6 +101,8 @@ def temp_user_storage():
         str: Path to temporary user storage file
     """
     temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False)
+    # Write empty JSON object to avoid loading errors
+    temp_file.write('{}')
     temp_file.close()
     yield temp_file.name
     os.unlink(temp_file.name)
@@ -127,10 +130,14 @@ def test_user():
     Returns:
         User: Test user object
     """
+    # Create proper password hash for test password
+    password = "testpassword123"
+    password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
     return User(
         id='test-user-123',
         email='test@visionlabel.pro',
-        password_hash='$2b$12$test.hash.for.testing.purposes.only'
+        password_hash=password_hash
     )
 
 
@@ -287,10 +294,10 @@ def authenticated_client(client, user_manager, test_user):
     # Add user to manager
     user_manager.users[test_user.id] = test_user
     
-    # Login user
-    with client.session_transaction() as sess:
-        sess['_user_id'] = test_user.id
-        sess['_fresh'] = True
+    # Login user using Flask-Login without storing MagicMock objects in session
+    with client:
+        from flask_login import login_user
+        login_user(test_user, remember=False)
     
     return client
 

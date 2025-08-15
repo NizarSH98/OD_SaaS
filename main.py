@@ -2,8 +2,8 @@
 """
 Main entry point for the Video Labeling Tool application.
 
-This script uses Poetry to run the Flask application for creating
-labeled datasets from videos, and includes comprehensive testing capabilities.
+This script runs the Flask application for creating labeled datasets 
+from videos, and includes comprehensive testing capabilities.
 """
 
 import os
@@ -27,11 +27,11 @@ def run_tests(test_args: Optional[List[str]] = None, coverage: bool = False, ver
     try:
         print("🧪 Running VisionLabel Pro Test Suite...")
         print("📁 Project directory:", os.getcwd())
-        print("🔧 Using Poetry virtual environment")
+        print("🔧 Using pip-installed dependencies")
         print("-" * 60)
         
         # Base pytest command
-        cmd = ["poetry", "run", "pytest"]
+        cmd = [sys.executable, "-m", "pytest"]
         
         # Add verbosity
         if verbose:
@@ -52,7 +52,7 @@ def run_tests(test_args: Optional[List[str]] = None, coverage: bool = False, ver
                 print("📊 Coverage reporting enabled")
             except Exception:
                 print("⚠️  Coverage reporting unavailable (pytest-cov not installed)")
-                print("   Install with: poetry add --group dev pytest-cov")
+                print("   Install with: py -m pip install pytest-cov")
                 print("   Continuing without coverage...")
         
         # Add test directory
@@ -62,7 +62,7 @@ def run_tests(test_args: Optional[List[str]] = None, coverage: bool = False, ver
         if test_args:
             cmd.extend(test_args)
         
-        print(f"🏃 Running command: {' '.join(cmd[2:])}")  # Skip 'poetry run'
+        print(f"🏃 Running command: {' '.join(cmd[2:])}")  # Skip 'python -m'
         print("-" * 60)
         
         # Run tests
@@ -83,12 +83,11 @@ def run_tests(test_args: Optional[List[str]] = None, coverage: bool = False, ver
         return 1
     except subprocess.CalledProcessError as e:
         print(f"❌ Error running tests: {e}")
-        print("💡 Make sure Poetry is installed and dependencies are available")
+        print("💡 Make sure pytest is installed: py -m pip install pytest")
         return 1
     except FileNotFoundError:
-        print("❌ Poetry not found. Please install Poetry first:")
-        print("   curl -sSL https://install.python-poetry.org | python3 -")
-        print("   or visit: https://python-poetry.org/docs/#installation")
+        print("❌ Python or pytest not found. Please install pytest:")
+        print("   py -m pip install pytest pytest-flask pytest-mock")
         return 1
     except Exception as e:
         print(f"❌ Unexpected error: {e}")
@@ -239,9 +238,9 @@ Examples:
     
     # Run the Flask application
     try:
-        print("🚀 Starting VisionLabel Pro with Poetry...")
+        print("🚀 Starting VisionLabel Pro...")
         print("📁 Project directory:", os.getcwd())
-        print("🔧 Using Poetry virtual environment")
+        print("🔧 Using pip-installed dependencies")
         print("🎥 Running full application with OpenCV support")
         
         if args.debug:
@@ -250,7 +249,7 @@ Examples:
         print("-" * 50)
         
         # Build Flask app command
-        cmd = ["poetry", "run", "python", "app.py"]
+        cmd = [sys.executable, "app.py"]
         
         # Set environment variables for Flask configuration
         env = os.environ.copy()
@@ -275,13 +274,13 @@ Examples:
         return 0
     except subprocess.CalledProcessError as e:
         print(f"❌ Error running application: {e}")
-        print("💡 Make sure Poetry is installed and dependencies are available")
+        print("💡 Make sure all dependencies are installed")
         print("🧪 Try running tests first: python main.py --test")
         return 1
     except FileNotFoundError:
-        print("❌ Poetry not found. Please install Poetry first:")
-        print("   curl -sSL https://install.python-poetry.org | python3 -")
-        print("   or visit: https://python-poetry.org/docs/#installation")
+        print("❌ Python not found or dependencies missing.")
+        print("   Make sure Flask and other dependencies are installed:")
+        print("   py -m pip install -r requirements.txt")
         return 1
     except Exception as e:
         print(f"❌ Unexpected error: {e}")

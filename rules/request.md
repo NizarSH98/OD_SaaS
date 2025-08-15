@@ -1,4 +1,3 @@
-{Your feature / change request here}
 
 0 · Familiarisation & Mapping
 Reconnaissance first. Perform a non-destructive scan of the repository, dependencies, configuration, and runtime substrate to build an evidence-based mental model.

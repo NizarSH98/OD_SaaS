@@ -34,10 +34,10 @@ class TestMainRoutes:
     
     def test_index_route_authenticated(self, authenticated_client):
         """Test index route for authenticated users"""
-        with patch('modules.routes.label_storage') as mock_storage:
-            mock_storage.list_projects.return_value = [
-                {'project_id': 'test-1', 'name': 'Test Project 1'},
-                {'project_id': 'test-2', 'name': 'Test Project 2'}
+        with patch('modules.routes.video_processor') as mock_processor:
+            mock_processor.list_projects.return_value = [
+                {'id': 'test-1', 'name': 'Test Project 1', 'frame_count': 10, 'created_at': '2023-01-01T00:00:00'},
+                {'id': 'test-2', 'name': 'Test Project 2', 'frame_count': 20, 'created_at': '2023-01-02T00:00:00'}
             ]
             
             response = authenticated_client.get('/')
@@ -63,25 +63,31 @@ class TestMainRoutes:
     
     def test_annotate_route_authenticated(self, authenticated_client):
         """Test annotate route for authenticated user"""
-        with patch('modules.routes.label_storage') as mock_storage:
-            # Mock project metadata
-            mock_metadata = {
-                'project_id': 'test-project',
-                'video_name': 'test.mp4',
-                'total_frames': 10
-            }
-            mock_storage.load_project_metadata.return_value = mock_metadata
-            mock_storage.load_annotations.return_value = {'frames': {}}
-            
-            response = authenticated_client.get('/annotate/test-project')
-            
-            assert response.status_code == 200
-            assert b'Annotate' in response.data
+        with patch('modules.routes.video_processor') as mock_processor:
+            with patch('modules.routes.label_storage') as mock_storage:
+                # Mock project metadata
+                mock_metadata = {
+                    'project_id': 'test-project',
+                    'video_name': 'test.mp4',
+                    'extracted_frames': 10,
+                    'total_frames': 90,
+                    'fps': 30.0,
+                    'duration': 3.0,
+                    'frame_interval': 1.0,
+                    'created_at': '2023-01-01T00:00:00'
+                }
+                mock_processor.get_project_metadata.return_value = mock_metadata
+                mock_storage.get_frame_annotations.return_value = []
+                
+                response = authenticated_client.get('/annotate/test-project')
+                
+                assert response.status_code == 200
+                assert b'Annotate' in response.data
     
     def test_annotate_route_nonexistent_project(self, authenticated_client):
         """Test annotate route with non-existent project"""
-        with patch('modules.routes.label_storage') as mock_storage:
-            mock_storage.load_project_metadata.return_value = None
+        with patch('modules.routes.video_processor') as mock_processor:
+            mock_processor.get_project_metadata.side_effect = FileNotFoundError("Project not found")
             
             response = authenticated_client.get('/annotate/nonexistent')
             
@@ -89,23 +95,20 @@ class TestMainRoutes:
     
     def test_export_route_authenticated(self, authenticated_client):
         """Test export route for authenticated user"""
-        with patch('modules.routes.label_storage') as mock_storage:
-            mock_metadata = {
-                'project_id': 'test-project',
-                'video_name': 'test.mp4',
-                'total_frames': 10
-            }
-            mock_storage.load_project_metadata.return_value = mock_metadata
-            mock_storage.get_project_statistics.return_value = {
-                'annotated_frames': 5,
-                'total_annotations': 15,
-                'completion_percentage': 50.0
-            }
-            
-            response = authenticated_client.get('/export/test-project')
-            
-            assert response.status_code == 200
-            assert b'Export Dataset' in response.data
+        with patch('modules.routes.video_processor') as mock_processor:
+            with patch('modules.routes.label_storage') as mock_storage:
+                mock_metadata = {
+                    'project_id': 'test-project',
+                    'video_name': 'test.mp4',
+                    'extracted_frames': 10
+                }
+                mock_processor.get_project_metadata.return_value = mock_metadata
+                mock_storage.load_annotations.return_value = {'frames': {}}
+                
+                response = authenticated_client.get('/export/test-project')
+                
+                assert response.status_code == 200
+                assert b'Export Dataset' in response.data
 
 
 @pytest.mark.unit
@@ -155,7 +158,7 @@ class TestVideoUpload:
         video_data = BytesIO(b'fake video content')
         data = {
             'video': (video_data, 'test.mp4'),
-            'interval': '1.0',
+            'frame_interval': '1.0',  # UI param name
             'project_name': 'Test Project'
         }
         
@@ -208,16 +211,29 @@ class TestAPIEndpoints:
     def test_api_frame_success(self, mock_processor, authenticated_client):
         """Test successful frame retrieval"""
         # Mock frame path
-        mock_processor.frames_folder = '/mock/frames'
-        frame_path = '/mock/frames/test-project/frame_000.jpg'
+        mock_processor.get_frame_path.return_value = '/mock/frames/test-project/frame_000.jpg'
         
-        with patch('os.path.exists', return_value=True):
-            with patch('flask.send_file') as mock_send:
-                mock_send.return_value = 'mock response'
-                
-                response = authenticated_client.get('/api/frame/test-project/0')
-                
-                mock_send.assert_called_once()
+        with patch('flask.send_file') as mock_send:
+            mock_send.return_value = 'mock response'
+            
+            response = authenticated_client.get('/api/frame/test-project/0')
+            
+            mock_send.assert_called_once()
+            mock_processor.get_frame_path.assert_called_once_with('test-project', 0)
+
+    @patch('modules.routes.video_processor')
+    def test_api_frame_returns_jpeg_content_type(self, mock_processor, authenticated_client, tmp_path):
+        """Frame endpoint should return image/jpeg when serving a real file."""
+        # Create a real temporary JPEG file
+        from PIL import Image
+        img_path = tmp_path / 'frame_000.jpg'
+        Image.new('RGB', (10, 10), color=(255, 0, 0)).save(img_path, format='JPEG')
+
+        mock_processor.get_frame_path.return_value = str(img_path)
+        response = authenticated_client.get('/api/frame/test-project/0')
+        assert response.status_code == 200
+        assert response.headers.get('Content-Type') == 'image/jpeg'
+        assert len(response.data) > 0
     
     def test_api_frame_not_found(self, authenticated_client):
         """Test frame API with non-existent frame"""
@@ -241,9 +257,11 @@ class TestAPIEndpoints:
         assert data['annotations'] == mock_annotations
     
     @patch('modules.routes.label_storage')
-    def test_api_annotations_post(self, mock_storage, authenticated_client):
+    @patch('modules.routes.video_processor')
+    def test_api_annotations_post(self, mock_processor, mock_storage, authenticated_client):
         """Test POST annotations API"""
         mock_storage.save_annotation.return_value = True
+        mock_processor.get_frame_path.return_value = '/mock/frames/test-project/frame_000.jpg'
         
         annotations_data = {
             'annotations': [
@@ -262,9 +280,33 @@ class TestAPIEndpoints:
         assert data['success'] is True
         
         mock_storage.save_annotation.assert_called_once()
+        mock_processor.get_frame_path.assert_called_once_with('test-project', 0)
+
+    @patch('modules.routes.label_storage')
+    @patch('modules.routes.video_processor')
+    def test_api_annotations_id_autogeneration(self, mock_processor, mock_storage, authenticated_client):
+        """Server should add IDs to annotations that lack them before saving."""
+        mock_storage.save_annotation.return_value = True
+        mock_processor.get_frame_path.return_value = '/mock/frames/test-project/frame_000.jpg'
+
+        payload = { 'annotations': [ { 'class': 'person', 'x': 1, 'y': 2, 'width': 3, 'height': 4 } ] }
+        response = authenticated_client.post(
+            '/api/annotations/test-project/0',
+            data=json.dumps(payload),
+            content_type='application/json'
+        )
+        assert response.status_code == 200
+
+        # Inspect saved annotations argument (4th positional arg)
+        call_args, _ = mock_storage.save_annotation.call_args
+        assert len(call_args) >= 4, "save_annotation should be called with at least 4 args"
+        saved_annotations = call_args[3]  # annotations is 4th arg
+        assert isinstance(saved_annotations, list) and len(saved_annotations) == 1
+        assert 'id' in saved_annotations[0]
     
     @patch('modules.routes.label_storage')
-    def test_api_annotations_post_invalid_json(self, mock_storage, authenticated_client):
+    @patch('modules.routes.video_processor')
+    def test_api_annotations_post_invalid_json(self, mock_processor, mock_storage, authenticated_client):
         """Test POST annotations API with invalid JSON"""
         response = authenticated_client.post(
             '/api/annotations/test-project/0',
@@ -310,6 +352,22 @@ class TestAPIEndpoints:
         response = authenticated_client.get('/api/export/test-project/yolo')
         
         assert response.status_code == 500
+
+    @patch('modules.routes.label_storage')
+    def test_api_export_post_start(self, mock_storage, authenticated_client):
+        """Starting export via POST should return success JSON when prepared."""
+        mock_storage.export_dataset.return_value = '/path/to/export.zip'
+        response = authenticated_client.post(
+            '/api/export/test-project/yolo', data=json.dumps({}), content_type='application/json'
+        )
+        assert response.status_code == 200
+        payload = json.loads(response.data)
+        assert payload.get('success') is True
+
+    def test_api_export_invalid_format(self, authenticated_client):
+        """Invalid export format should return 400."""
+        response = authenticated_client.get('/api/export/test-project/invalid')
+        assert response.status_code == 400
     
     @patch('modules.routes.label_storage')
     def test_api_delete_project_success(self, mock_storage, authenticated_client):
@@ -373,13 +431,12 @@ class TestErrorHandling:
     """Test error handling and edge cases"""
     
     def test_invalid_project_id_format(self, authenticated_client):
-        """Test handling of invalid project ID formats"""
+        """Invalid project IDs should return 404"""
         invalid_ids = ['', 'invalid/chars', '../../../etc/passwd', 'very' * 100]
         
         for invalid_id in invalid_ids:
             response = authenticated_client.get(f'/annotate/{invalid_id}')
-            # Should handle gracefully (404, 400, or redirect)
-            assert response.status_code in [400, 404, 302]
+            assert response.status_code == 404
     
     def test_negative_frame_index(self, authenticated_client):
         """Test handling of negative frame indices"""
@@ -393,8 +450,13 @@ class TestErrorHandling:
         
         assert response.status_code == 404
     
-    def test_malformed_annotation_data(self, authenticated_client):
-        """Test handling of malformed annotation data"""
+    @patch('modules.routes.video_processor')
+    @patch('modules.routes.label_storage')
+    def test_malformed_annotation_data(self, mock_storage, mock_processor, authenticated_client):
+        """Malformed payloads must return 400 (strict)."""
+        mock_processor.get_frame_path.return_value = '/mock/frames/test-project/frame_000.jpg'
+        mock_storage.save_annotation.return_value = True
+
         malformed_data = [
             '{}',  # Empty object
             '{"invalid": "structure"}',  # Wrong structure
@@ -407,8 +469,28 @@ class TestErrorHandling:
                 data=data,
                 content_type='application/json'
             )
-            # Should handle gracefully
-            assert response.status_code in [400, 500]
+            assert response.status_code == 400
+
+    @patch('modules.routes.video_processor')
+    @patch('modules.routes.label_storage')
+    def test_api_annotations_invalid_type(self, mock_storage, mock_processor, authenticated_client):
+        """annotations must be a list; invalid type returns 400"""
+        mock_processor.get_frame_path.return_value = '/mock/frames/test-project/frame_000.jpg'
+        mock_storage.save_annotation.return_value = True
+
+        bad_payloads = [
+            {'annotations': 'not-a-list'},
+            {'annotations': 123},
+            {'annotations': {'id': 'a'}},
+        ]
+
+        for payload in bad_payloads:
+            response = authenticated_client.post(
+                '/api/annotations/test-project/0',
+                data=json.dumps(payload),
+                content_type='application/json'
+            )
+            assert response.status_code == 400
     
     def test_file_system_errors(self, authenticated_client):
         """Test handling of file system errors"""
@@ -418,6 +500,34 @@ class TestErrorHandling:
             
             # Should handle OS errors gracefully
             assert response.status_code in [404, 500]
+
+    @patch('modules.routes.video_processor')
+    @patch('modules.routes.label_storage')
+    def test_navigate_frame_endpoint(self, mock_storage, mock_processor, authenticated_client):
+        """Navigate endpoint should validate range and return annotations list."""
+        mock_processor.get_project_metadata.return_value = {'extracted_frames': 5}
+        mock_storage.get_frame_annotations.return_value = [{'id': 'a'}]
+        response = authenticated_client.post(
+            '/api/navigate/test-project',
+            data=json.dumps({'frame_index': 2}),
+            content_type='application/json'
+        )
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert data['success'] is True
+        assert data['frame_index'] == 2
+        assert isinstance(data['annotations'], list)
+
+    @patch('modules.routes.video_processor')
+    def test_list_projects_endpoint(self, mock_processor, authenticated_client):
+        """List projects returns JSON with expected structure."""
+        mock_processor.list_projects.return_value = [
+            {'id': 'p1', 'name': 'A', 'frame_count': 1, 'created_at': '2024-01-01T00:00:00'}
+        ]
+        response = authenticated_client.get('/api/projects')
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert 'projects' in data and isinstance(data['projects'], list) and data['projects'][0]['id'] == 'p1'
 
 
 @pytest.mark.integration

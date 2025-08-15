@@ -102,8 +102,11 @@ class TestVideoFrameExtraction:
         assert metadata['fps'] == 30.0
         assert metadata['total_frames'] == 90
         assert metadata['duration'] == 3.0
-        assert metadata['interval'] == 1.0
-        assert metadata['extracted_count'] == 3
+        assert metadata['frame_interval'] == 1.0
+        assert metadata['extracted_frames'] == 3
+        # Ensure metadata file is written once and contains expected keys
+        handles = [call for call in mock_file_open.mock_calls if call[0] == '']
+        assert handles, 'metadata.json should be opened for writing'
     
     @patch('cv2.VideoCapture')
     @patch('cv2.imwrite')
@@ -138,11 +141,11 @@ class TestVideoFrameExtraction:
         )
         
         # Verify interval calculation
-        assert metadata['interval'] == 2.5
+        assert metadata['frame_interval'] == 2.5
         assert metadata['duration'] == 5.0
         # With 2.5 second interval and 30fps, should extract frames every 75 frames
         # At 150 total frames, should extract frames at positions 0 and 75 (2 frames total)
-        assert metadata['extracted_count'] == 2
+        assert metadata['extracted_frames'] == 2
     
     @patch('cv2.VideoCapture')
     @patch('cv2.imwrite')
@@ -213,6 +216,7 @@ class TestVideoFrameExtraction:
         assert metadata['fps'] == 60.0
         assert metadata['duration'] == 10.0
         # Should extract frames at 60-frame intervals (1 second at 60fps)
+        assert metadata['extracted_frames'] >= 1
     
     @patch('cv2.VideoCapture')
     @patch('cv2.imwrite')
@@ -277,7 +281,9 @@ class TestVideoProcessorMetadata:
         }.get(prop, 0)
         
         frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
-        read_responses = [(True, frame)] * 5 + [(False, None)]
+        # Provide enough frames to get 5 extracted frames (at 48-frame intervals)
+        # Need at least 4 * 48 + 1 = 193 frames
+        read_responses = [(True, frame)] * 193 + [(False, None)]
         mock_cap.read.side_effect = read_responses
         mock_cap.set.return_value = True
         mock_capture.return_value = mock_cap
@@ -311,7 +317,8 @@ class TestVideoProcessorMetadata:
     @patch('cv2.imwrite')
     @patch('os.path.exists')
     @patch('os.makedirs')
-    def test_metadata_edge_cases(self, mock_makedirs, mock_exists,
+    @patch('builtins.open', new_callable=mock_open)
+    def test_metadata_edge_cases(self, mock_file_open, mock_makedirs, mock_exists,
                                 mock_imwrite, mock_capture, video_processor):
         """Test metadata generation with edge cases"""
         # Setup mocks for edge case video (very short, odd FPS)
@@ -362,7 +369,8 @@ class TestVideoProcessorErrorHandling:
     @patch('cv2.VideoCapture')
     @patch('os.path.exists')
     @patch('os.makedirs')
-    def test_frame_read_error(self, mock_makedirs, mock_exists, mock_capture, video_processor):
+    @patch('builtins.open', new_callable=mock_open)
+    def test_frame_read_error(self, mock_file_open, mock_makedirs, mock_exists, mock_capture, video_processor):
         """Test handling of frame reading errors"""
         mock_exists.return_value = True
         

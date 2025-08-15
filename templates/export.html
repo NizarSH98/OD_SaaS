@@ -23,7 +23,7 @@
 <div class="export-interface" 
      data-project-id="{{ project_id }}"
      data-metadata="{{ metadata | tojson | e }}"
-     data-total-frames="{{ metadata.total_frames }}"
+     data-total-frames="{{ metadata.extracted_frames }}"
      data-annotated-frames="{{ annotated_frames or 0 }}"
      data-annotations-count="{{ annotations_count or 0 }}"
      data-completion-percentage="{{ completion_percentage or 0 }}">
@@ -38,7 +38,7 @@
                 <div class="project-stats">
                     <span class="stat-item">
                         <i class="fas fa-images me-1"></i>
-                        {{ metadata.total_frames }} frames
+                        {{ metadata.extracted_frames }} frames
                     </span>
                     <span class="stat-item">
                         <i class="fas fa-tags me-1"></i>
@@ -191,7 +191,7 @@
                     <div class="form-check">
                         <input class="form-check-input" type="radio" name="frameSelection" id="allFrames" value="all" checked>
                         <label class="form-check-label" for="allFrames">
-                            All frames ({{ metadata.total_frames }})
+                            All frames ({{ metadata.extracted_frames }})
                         </label>
                     </div>
                     <div class="form-check">
@@ -312,14 +312,17 @@
 // Initialize export interface
 document.addEventListener('DOMContentLoaded', function() {
     const exportEl = document.querySelector('.export-interface');
+    if (!exportEl) return;
+    let parsedMetadata = {};
+    try { parsedMetadata = JSON.parse(exportEl.dataset.metadata); } catch (_) {}
     const exportInterface = new ExportInterface({
         projectId: exportEl.dataset.projectId,
-        metadata: JSON.parse(exportEl.dataset.metadata),
+        metadata: parsedMetadata,
         stats: {
-            totalFrames: parseInt(exportEl.dataset.totalFrames),
-            annotatedFrames: parseInt(exportEl.dataset.annotatedFrames),
-            totalAnnotations: parseInt(exportEl.dataset.annotationsCount),
-            completionRate: parseInt(exportEl.dataset.completionPercentage)
+            totalFrames: parseInt(exportEl.dataset.totalFrames || '0'),
+            annotatedFrames: parseInt(exportEl.dataset.annotatedFrames || '0'),
+            totalAnnotations: parseInt(exportEl.dataset.annotationsCount || '0'),
+            completionRate: parseInt(exportEl.dataset.completionPercentage || '0')
         }
     });
 });

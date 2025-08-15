@@ -119,9 +119,10 @@ class UserManager:
         return self.users.get(user_id)
     
     def get_user_by_email(self, email: str) -> Optional[User]:
-        """Get user by email"""
+        """Get user by email (case-insensitive)"""
+        email_lower = email.lower()
         for user in self.users.values():
-            if user.email.lower() == email.lower():
+            if user.email.lower() == email_lower:
                 return user
         return None
     

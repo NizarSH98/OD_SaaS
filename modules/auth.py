@@ -32,7 +32,7 @@ class RegisterForm(FlaskForm):
     ])
     password = PasswordField('Password', validators=[
         DataRequired(message='Password is required'),
-        Length(min=6, message='Password must be at least 6 characters long')
+        Length(min=8, message='Password must be at least 8 characters long')
     ])
     password_confirm = PasswordField('Confirm Password', validators=[
         DataRequired(message='Please confirm your password'),
