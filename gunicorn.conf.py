@@ -15,9 +15,9 @@ keepalive = 2
 max_requests = 1000
 max_requests_jitter = 50
 
-# Logging
-accesslog = "logs/access.log"
-errorlog = "logs/error.log"
+# Logging - use stdout/stderr for Render compatibility
+accesslog = "-"  # stdout
+errorlog = "-"   # stderr
 loglevel = "info"
 access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"'
 
@@ -26,7 +26,7 @@ proc_name = "video-labeling-tool"
 
 # Server mechanics
 daemon = False
-pidfile = "logs/gunicorn.pid"
+pidfile = None  # Don't create pid file in Render
 user = None
 group = None
 tmp_upload_dir = None
