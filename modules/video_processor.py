@@ -26,29 +26,40 @@ class VideoProcessor:
         """
         if not os.path.exists(video_path):
             raise FileNotFoundError(f"Video file not found: {video_path}")
-            
-        # Generate unique project ID
-        project_id = project_name or f"project_{uuid.uuid4().hex[:8]}"
-        project_folder = os.path.join(self.frames_folder, project_id)
         
-        # Ensure project folder exists
-        os.makedirs(project_folder, exist_ok=True)
+        print(f"🎥 Starting video processing: {video_path}")
+        print(f"📊 Interval: {interval} seconds")
+        
+        try:
+            # Generate unique project ID
+            project_id = project_name or f"project_{uuid.uuid4().hex[:8]}"
+            project_folder = os.path.join(self.frames_folder, project_id)
+            
+            # Ensure project folder exists
+            os.makedirs(project_folder, exist_ok=True)
         
         # Open video (ensure release even on failure on Windows)
-        cap = cv2.VideoCapture(video_path)
-        if not cap.isOpened():
-            try:
-                cap.release()
-            except Exception:
-                pass
-            raise ValueError(f"Could not open video file: {video_path}")
+        try:
+            cap = cv2.VideoCapture(video_path)
+            if not cap.isOpened():
+                try:
+                    cap.release()
+                except Exception:
+                    pass
+                raise ValueError(f"Could not open video file: {video_path}")
+        except Exception as e:
+            print(f"❌ Error opening video: {e}")
+            raise
         
         # Get video properties
         fps = cap.get(cv2.CAP_PROP_FPS)
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        duration = total_frames / fps
+        duration = total_frames / fps if fps > 0 else 0
         frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        
+        print(f"📹 Video info: {total_frames} frames, {fps:.2f} FPS, {duration:.2f}s duration")
+        print(f"📐 Resolution: {frame_width}x{frame_height}")
         
         # Calculate frame interval with overflow protection
         try:
@@ -57,6 +68,8 @@ class VideoProcessor:
                 frame_interval = 1
         except (OverflowError, ValueError):
             frame_interval = 1
+            
+        print(f"🔄 Extracting every {frame_interval} frames")
         
         extracted_frames = []
         frame_count = 0
@@ -66,6 +79,10 @@ class VideoProcessor:
             ret, frame = cap.read()
             if not ret:
                 break
+                
+            # Progress feedback every 100 frames
+            if frame_count % 100 == 0:
+                print(f"📊 Processed {frame_count}/{total_frames} frames, extracted {extracted_count} frames")
                 
             # Extract frame at specified interval
             if frame_count % frame_interval == 0:
@@ -80,6 +97,8 @@ class VideoProcessor:
             frame_count += 1
         
         cap.release()
+        
+        print(f"✅ Video processing complete! Extracted {extracted_count} frames from {total_frames} total frames")
         
         # Create metadata (allow zero extracted frames; handle gracefully)
         metadata = {
@@ -97,15 +116,22 @@ class VideoProcessor:
             'updated_at': datetime.now().isoformat()
         }
         
-        # Ensure project folder exists
-        os.makedirs(project_folder, exist_ok=True)
-        
-        # Save metadata
-        metadata_path = os.path.join(project_folder, 'metadata.json')
-        with open(metadata_path, 'w') as f:
-            json.dump(metadata, f, indent=2)
-        
-        return project_id, extracted_frames, metadata
+            # Save metadata
+            metadata_path = os.path.join(project_folder, 'metadata.json')
+            with open(metadata_path, 'w') as f:
+                json.dump(metadata, f, indent=2)
+            
+            return project_id, extracted_frames, metadata
+            
+        except Exception as e:
+            print(f"❌ Video processing failed: {e}")
+            # Clean up on error
+            try:
+                if 'cap' in locals():
+                    cap.release()
+            except:
+                pass
+            raise
     
     def get_project_metadata(self, project_id: str) -> dict:
         """Load project metadata"""

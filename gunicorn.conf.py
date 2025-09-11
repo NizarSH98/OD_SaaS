@@ -5,10 +5,10 @@ bind = "0.0.0.0:5000"
 backlog = 2048
 
 # Worker processes
-workers = 2  # Adjust based on your CPU cores
+workers = 1  # Use single worker for video processing
 worker_class = "sync"
 worker_connections = 1000
-timeout = 30
+timeout = 300  # 5 minutes for video processing
 keepalive = 2
 
 # Restart workers after this many requests, to prevent memory leaks
