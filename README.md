@@ -1,215 +1,86 @@
-# Video Labeling Tool
+# Computer-Vision Dataset Tool
 
-A modern, web-based Flask application for creating labeled datasets from videos. This tool allows you to extract frames from videos and create bounding box annotations for computer vision model training.
+A browser-based computer-vision workflow for turning video into labeled object-detection datasets.
 
-## Features
+The system covers the practical data-preparation loop:
 
-- **Video Upload & Processing**: Upload videos and extract frames at customizable intervals
-- **Interactive Annotation**: Click and drag to create bounding boxes on frames
-- **Multiple Export Formats**: Export datasets in YOLO, COCO, and Pascal VOC formats
-- **Modern UI**: Responsive, user-friendly interface with Bootstrap styling
-- **Project Management**: Organize multiple annotation projects
-- **Auto-Save**: Automatic saving of annotations with manual override option
-- **Keyboard Shortcuts**: Efficient navigation and annotation controls
-- **Progress Tracking**: Visual progress indicators and statistics
+**video upload → frame extraction → bounding-box annotation → dataset export**
 
-## Project Structure
+It was built to make object-detection dataset creation usable from a web interface rather than requiring a local annotation toolchain.
 
-```
+## What it demonstrates
+
+- Flask backend and route design
+- OpenCV video processing and frame extraction
+- browser-based bounding-box annotation
+- project-level annotation persistence
+- dataset export to multiple training formats
+- modular separation between routes, processing, and storage
+- error handling and generated-data hygiene
+
+## Supported workflow
+
+1. Create a project and upload a video.
+2. Extract frames at a configurable interval.
+3. Annotate objects with bounding boxes in the browser.
+4. Navigate through frames with keyboard controls.
+5. Export the dataset for downstream model training.
+
+## Export formats
+
+- **YOLO**
+- **COCO**
+- **Pascal VOC**
+
+## Architecture
+
+```text
 OD_SaaS/
-├── app.py                 # Main Flask application
-├── config.py             # Configuration settings
-├── requirements.txt      # Python dependencies
+├── app.py
+├── config.py
+├── requirements.txt
 ├── modules/
-│   ├── __init__.py
-│   ├── video_processor.py    # Video processing and frame extraction
-│   ├── data_storage.py       # Annotation storage and export
-│   └── routes.py             # Flask routes and API endpoints
+│   ├── video_processor.py
+│   ├── data_storage.py
+│   └── routes.py
 ├── templates/
-│   ├── base.html            # Base template with navigation
-│   ├── index.html           # Project listing page
-│   ├── upload.html          # Video upload interface
-│   ├── annotate.html        # Main annotation interface
-│   ├── export.html          # Dataset export page
-│   └── error.html           # Error handling page
-├── uploads/                 # Uploaded video files
-├── frames/                  # Extracted frame images
-└── datasets/               # Annotation data and exports
+│   ├── base.html
+│   ├── index.html
+│   ├── upload.html
+│   ├── annotate.html
+│   ├── export.html
+│   └── error.html
+├── uploads/
+├── frames/
+└── datasets/
 ```
 
-## Installation & Setup
+Runtime media and generated datasets are excluded from source control.
 
-### Prerequisites
+## Stack
 
-- Python 3.7 or higher
-- pip (Python package installer)
+**Backend:** Python, Flask  
+**Computer vision:** OpenCV  
+**Frontend:** HTML5 Canvas, Bootstrap, JavaScript / jQuery  
+**Data:** JSON-based annotation storage
 
-### 1. Clone or Download the Project
-
-```bash
-# If you have the project files, navigate to the project directory
-cd OD_SaaS
-```
-
-### 2. Install Dependencies
+## Run locally
 
 ```bash
 pip install -r requirements.txt
-```
-
-### 3. Run the Application
-
-```bash
 python app.py
 ```
 
-The application will start on `http://localhost:5000`
+Then open:
 
-### 4. Prepare for GitHub (Cleanup & Ignore)
-
-This project generates runtime data (videos, frames, datasets) that should not be committed.
-
-Already included `.gitignore` excludes:
-
-- `uploads/`, `frames/`, `datasets/` (runtime data)
-- `users.json` (local demo users)
-- caches: `__pycache__/`, `.pytest_cache/`, coverage, build folders
-
-You can safely remove local generated data to clean your workspace before pushing:
-
-```bash
-# illustrative only
-rm -rf uploads/* frames/* datasets/* debug.log
+```text
+http://localhost:5000
 ```
 
-## Usage Guide
+## Why this project matters
 
-### 1. Upload a Video
+Model quality depends heavily on data quality and annotation workflow. This project focuses on the engineering around the model—ingestion, human labeling, data structure, export compatibility, and usability.
 
-1. Navigate to the home page
-2. Click "Upload Video" or "New Project"
-3. Select your video file (supports MP4, AVI, MOV, MKV, FLV, WMV, WebM)
-4. Set the frame extraction interval (0.1 - 10.0 seconds)
-5. Optionally provide a project name
-6. Click "Start Processing Video"
+It is part of my broader work across applied AI, computer vision, RAG systems, and AI tooling.
 
-### 2. Annotate Frames
-
-1. After processing, you'll be redirected to the annotation interface
-2. Use the frame navigation controls to move between frames
-3. Enter a class/label name (e.g., "person", "car", "dog")
-4. Click "Draw Box" to enable drawing mode
-5. Click and drag on the image to create bounding boxes
-6. Annotations are auto-saved by default
-
-### 3. Navigation Controls
-
-- **Arrow Keys**: Navigate between frames
-- **Space**: Toggle draw mode
-- **Delete**: Remove selected annotation
-- **Ctrl+S**: Manually save annotations
-- **Escape**: Cancel current drawing
-
-### 4. Export Dataset
-
-1. Click "Export" in the annotation interface
-2. Choose your preferred format:
-   - **YOLO**: For YOLO object detection models
-   - **COCO**: JSON format for various frameworks
-   - **Pascal VOC**: XML format for traditional CV tools
-3. Download the generated ZIP file
-
-## Supported Video Formats
-
-- MP4
-- AVI
-- MOV
-- MKV
-- FLV
-- WMV
-- WebM
-
-## Export Formats
-
-### YOLO Format
-- `labels/` folder with `.txt` files containing normalized coordinates
-- `images/` folder with frame images
-- `classes.txt` file with class names
-
-### COCO Format
-- `annotations.json` with complete metadata
-- Category definitions and image information
-- Compatible with many ML frameworks
-
-### Pascal VOC Format
-- Individual `.xml` files for each frame
-- Detailed annotation metadata
-- Compatible with traditional computer vision tools
-
-## Configuration
-
-Edit `config.py` to customize:
-
-- Upload file size limits
-- Supported video formats
-- Frame extraction settings
-- Export formats
-- Directory paths
-
-## API Endpoints
-
-- `GET /` - Home page with project listing
-- `POST /upload` - Upload and process video
-- `GET /annotate/<project_id>` - Annotation interface
-- `GET /api/frame/<project_id>/<frame_index>` - Get frame image
-- `POST /api/annotations/<project_id>/<frame_index>` - Save annotations
-- `GET /api/export/<project_id>/<format>` - Export dataset
-
-## Technologies Used
-
-- **Backend**: Flask, OpenCV, Python
-- **Frontend**: Bootstrap 5, jQuery, HTML5 Canvas
-- **Storage**: JSON files for annotations
-- **Processing**: OpenCV for video frame extraction
-
-## Development Features
-
-- **Modular Architecture**: Separated concerns for easy extension
-- **Clean Code**: Well-documented and organized codebase
-- **Error Handling**: Comprehensive error handling and user feedback
-- **Responsive Design**: Works on desktop and mobile devices
-- **Extensible**: Easy to add new export formats or features
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Video won't upload**: Check file size (max 500MB) and format
-2. **Frames not displaying**: Ensure video processed successfully
-3. **Annotations not saving**: Check auto-save is enabled or save manually
-4. **Export failing**: Ensure you have annotated frames to export
-
-### Performance Tips
-
-- Use smaller frame intervals for detailed annotation
-- Larger intervals for faster processing
-- Clear old projects periodically to save disk space
-
-## Future Enhancements
-
-This modular architecture allows for easy extension:
-
-- Multi-object tracking across frames
-- Polygon annotation support
-- Collaborative annotation features
-- Integration with ML training pipelines
-- Cloud storage support
-- Advanced export options
-
-## License
-
-This project is designed for educational and development purposes. Feel free to modify and extend as needed.
-
-## Support
-
-For issues or questions, check the error logs in the console or browser developer tools. The application provides detailed error messages to help with troubleshooting. 
+[Portfolio](https://nizarsh98.github.io/portfolio-classic.html)
